@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use this formalization, please cite this repository."
+title: "Lean formalization of the I3322 variational theorem and finite-dimensional nonattainment"
+type: software
+authors:
+  - family-names: "Pauwels"
+    given-names: "Jef"
+repository-code: "https://github.com/jefpauwels/i3322-lean"
+url: "https://github.com/jefpauwels/i3322-lean"
+abstract: >-
+  A Lean 4 formalization proving that the finite-dimensional
+  quantum supremum of the I3322 Bell expression equals the Pal--Vertesi
+  variational supremum and that no finite-dimensional strategy attains it.
+keywords:
+  - Lean 4
+  - formal verification
+  - quantum information
+  - Bell inequalities
+  - I3322

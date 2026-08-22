@@ -1,0 +1,39 @@
+name: Lean CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lean-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build pinned Lean project
+        uses: leanprover/lean-action@v1
+        with:
+          build: true
+          test: false
+          lint: false
+
+      - name: Print theorem axioms
+        run: lake env lean Audit.lean
+
+      - name: Reject proof placeholders
+        run: |
+          if rg -n '\b(sorry|admit)\b|^\s*axiom\b' I3322 Audit.lean; then
+            echo "Proof placeholder or project axiom found."
+            exit 1
+          fi
