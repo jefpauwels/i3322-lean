@@ -1,0 +1,98 @@
+\documentclass[tikz,border=7pt]{standalone}
+
+\usepackage{amsmath,amssymb}
+\usepackage[T1]{fontenc}
+\usetikzlibrary{arrows.meta,calc,positioning}
+
+\definecolor{exactblue}{HTML}{006D9C}
+\definecolor{proofpurple}{HTML}{7546A6}
+\definecolor{strictgreen}{HTML}{16856B}
+\definecolor{neutralgray}{HTML}{777777}
+\definecolor{lightgray}{HTML}{F4F4F4}
+
+\tikzset{
+  every picture/.style={
+    font=\footnotesize,
+    >=Latex,
+    line cap=round,
+    line join=round
+  },
+  box/.style={
+    draw=neutralgray,
+    rounded corners=2pt,
+    fill=white,
+    align=center,
+    inner xsep=5pt,
+    inner ysep=4pt
+  },
+  definition/.style={box, fill=lightgray,
+    text width=2.75cm, minimum height=9mm},
+  checked/.style={box, draw=exactblue, very thick, fill=exactblue!6,
+    text width=2.75cm, minimum height=10mm},
+  strict/.style={box, draw=strictgreen, very thick, fill=strictgreen!7,
+    text width=2.75cm, minimum height=10mm},
+  conclusion/.style={box, draw=proofpurple, very thick, fill=proofpurple!7,
+    text width=3.0cm, minimum height=11mm},
+  premise/.style={box, draw=neutralgray, densely dotted,
+    text width=2.75cm, minimum height=9mm},
+  dependency/.style={draw=black!72, thick,
+    -{Latex[length=2.2mm,width=1.6mm]}, rounded corners=2pt},
+  note/.style={align=center, text=black!80, font=\scriptsize}
+}
+
+\begin{document}
+\begin{tikzpicture}[x=1cm,y=1cm]
+  % The two inequalities that establish the variational identity.
+  \node[definition] (quantum) at (1.8,0)
+    {\texttt{QuantumStrategy}\\finite pure state and projectors};
+  \node[definition, text width=3.4cm] (pv) at (7.1,0)
+    {\texttt{PVChain}\\Pál--Vértesi chain\\labels, amplitudes, \(\beta_{\rm PV}\)};
+  \node[definition] (table) at (12.4,0)
+    {\texttt{CouplingTable}\\joint weights and marginals};
+
+  \node[checked] (op) at (1.8,-1.75)
+    {\texttt{tableBound}\\\(I_{3322}(\mathsf S)\leq\theta.\texttt{score}\)};
+  \node[checked] (realize) at (7.1,-1.75)
+    {\texttt{exists\_}\\\texttt{quantumStrategy}\\
+     every finite chain is realized};
+  \node[checked] (ensemble) at (12.4,-1.75)
+    {\texttt{score\_le\_betaPV}\\\(\theta.\texttt{score}\leq\beta_{\rm PV}\)};
+
+  \node[conclusion, text width=3.5cm] (variational) at (7.1,-3.45)
+    {\texttt{quantumSupremum\_}\\\texttt{eq\_betaPV}\\
+     \(\texttt{quantumSupremum}=\beta_{\rm PV}\)};
+
+  \draw[dependency] (quantum) -- (op);
+  \draw[dependency] (pv) -- (realize);
+  \draw[dependency] (table) -- (ensemble);
+  \draw[dependency] (op.south) |- ([xshift=-8mm]variational.north);
+  \draw[dependency] (realize) -- (variational);
+  \draw[dependency] (ensemble.south) |- ([xshift=8mm]variational.north);
+
+  % Strict nonattainment.
+  \node[premise] (equality) at (12.4,-5.55)
+    {assume \(\theta.\texttt{score}=\beta_{\rm PV}\)};
+  \node[checked, text width=3.5cm] (value) at (7.1,-5.55)
+    {\texttt{equalityChainOfTable}\\via \texttt{ValueSpine} and finite windows};
+  \node[strict] (tail) at (1.8,-5.55)
+    {\texttt{EqualityChain.}\\\texttt{false}\\
+     constant left tail propagates;\\geometric growth contradicts\\square summability};
+
+  \node[strict] (strictness) at (1.8,-7.6)
+    {\texttt{score\_ne\_betaPV}\\no finite joint-weight\\matrix reaches \(\beta_{\rm PV}\)};
+  \node[conclusion] (nonattain) at (7.1,-7.6)
+    {\texttt{finiteDimensional\_}\\\texttt{nonattainment}\\no \texttt{QuantumStrategy}\\attains the supremum};
+
+  \draw[dependency] (table.east) -- ++(5mm,0) |- (equality.east);
+  \draw[dependency] (equality) -- (value);
+  \draw[dependency] (value) -- (tail);
+  \draw[dependency] (tail) -- (strictness);
+  \draw[dependency] (strictness) -- (nonattain);
+  \draw[dependency] (variational.east) -- ++(6.3,0) |- (nonattain.east);
+
+  \node[note, below=4mm of nonattain]
+    {Solid boxes name compiled definitions or theorems; the dotted box is a
+     hypothesis.  Scope: finite-dimensional pure-state/projective-measurement
+     strategies.};
+\end{tikzpicture}
+\end{document}

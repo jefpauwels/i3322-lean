@@ -19,10 +19,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Build pinned Lean project
-        uses: leanprover/lean-action@v1
+        uses: leanprover/lean-action@50fcf42d2e460296f1a34b402e990d1b24f8b596 # v1
         with:
           build: true
           test: false
@@ -33,7 +33,7 @@ jobs:
 
       - name: Reject proof placeholders
         run: |
-          if rg -n '\b(sorry|admit)\b|^\s*axiom\b' I3322 Audit.lean; then
+          if rg -n '\b(sorry|admit)\b|^\s*axiom\b' I3322 I3322.lean Audit.lean; then
             echo "Proof placeholder or project axiom found."
             exit 1
           fi

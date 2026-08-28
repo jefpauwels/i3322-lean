@@ -1,19 +1,25 @@
 cff-version: 1.2.0
 message: "If you use this formalization, please cite this repository."
-title: "Lean formalization of the I3322 variational theorem and finite-dimensional nonattainment"
+title: "Lean formalization of the I3322 variational identity and nonattainment for finite-dimensional pure-projective strategies"
 type: software
+license: MIT
 authors:
   - family-names: "Pauwels"
     given-names: "Jef"
 repository-code: "https://github.com/jefpauwels/i3322-lean"
 url: "https://github.com/jefpauwels/i3322-lean"
 abstract: >-
-  A Lean 4 formalization proving that the finite-dimensional
-  quantum supremum of the I3322 Bell expression equals the Pal--Vertesi
-  variational supremum and that no finite-dimensional strategy attains it.
+  A Lean 4 formalization proving that the supremum of the explicitly defined
+  I3322 Bell functional over finite-dimensional complex bipartite pure-state
+  strategies with three binary projective measurements per party equals the
+  supremum over finite Pál–Vértesi chains, and that no strategy in this
+  pure-projective class attains that supremum. The standard reduction from
+  mixed states and binary POVMs to this class is not formalized.
 keywords:
   - Lean 4
+  - mathlib
   - formal verification
   - quantum information
+  - quantum nonlocality
   - Bell inequalities
   - I3322
