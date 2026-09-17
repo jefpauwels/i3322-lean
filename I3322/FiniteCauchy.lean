@@ -1,12 +1,11 @@
 import Mathlib.Analysis.InnerProductSpace.PiL2
 import Mathlib.Data.Complex.BigOperators
 
-/-! # Finite-vector Cauchy--Schwarz in Born-contraction form -/
+/-! # Cauchy--Schwarz for the Born-rule expectation -/
 
 namespace I3322
 
-/-- Cauchy--Schwarz for finite complex vectors, stated with the
-`dotProduct (star u) v` convention used by the Born contraction. -/
+/-- Cauchy--Schwarz for finite complex vectors. -/
 theorem re_dotProduct_star_le_sqrt_mul {ι : Type*} [Fintype ι]
     (u v : ι → ℂ) :
     (dotProduct (star u) v).re ≤

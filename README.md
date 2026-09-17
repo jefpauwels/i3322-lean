@@ -2,110 +2,92 @@
 
 [![Lean CI](https://github.com/jefpauwels/i3322-lean/actions/workflows/lean.yml/badge.svg)](https://github.com/jefpauwels/i3322-lean/actions/workflows/lean.yml)
 
-This repository contains Lean 4 proofs of the following two theorems:
+This repository formalizes Theorems 1 and 2 of
+[*The quantum supremum of the I3322 Bell inequality is not attained in finite dimension*](https://arxiv.org/abs/2608.29734v1).
+The paper gives the mathematical argument; the tables below locate its definitions
+and proof steps in Lean. All references use **arXiv:2608.29734v1** ([PDF](https://arxiv.org/pdf/2608.29734v1)).
 
-```lean
-I3322.quantumSupremum_eq_betaPV : quantumSupremum = betaPV
+## Definitions and statements
 
-I3322.finiteDimensional_nonattainment :
-  ∀ S : QuantumStrategy, S.value ≠ quantumSupremum
-```
+Start with [Statement.lean](I3322/Statement.lean). It collects every
+project-specific definition needed to read the two theorems, with paper
+references beside the formulas. Its final section connects these definitions
+to the existing proof by proving equality of the complete sets of values.
 
-## Formal scope
+Names in this table have prefix `I3322.Statement.`
 
-[`QuantumStrategy`](I3322/QuantumStrategy.lean) consists of two positive
-finite local dimensions, a nonzero (not necessarily normalized) complex
-bipartite pure-state vector, and three binary projective measurements for each
-party. Born values are divided by the vector's squared norm. With one-based
-measurement labels, the encoded Bell functional is
-
-```text
--<A2> - <B1> - 2<B2>
-+ <A1 B1> + <A1 B2> + <A2 B1> + <A2 B2>
-- <A1 B3> + <A2 B3> - <A3 B1> + <A3 B2>.
-```
-
-Here `<Ax>` and `<By>` are outcome-`1` marginal probabilities, and
-`<Ax By>` is the joint outcome-`(1,1)` probability.
-
-[`PVChain`](I3322/PV.lean) encodes finite Pál–Vértesi chains with labels in
-`[-1,1]`, endpoints `1` and `-1`, nonnegative amplitudes, and positive squared
-norm. The two suprema are
-
-```lean
-I3322.quantumSupremum = sSup (Set.range QuantumStrategy.value)
-I3322.betaPV = sSup (Set.range PVChain.value)
-```
-
-The theorem quantifiers are exactly over this pure-state/projective-measurement
-model. The usual finite-dimensional reduction from mixed states and binary
-POVMs by purification and Naimark dilation is not formalized here. Neither are
-general infinite-dimensional or commuting-operator strategies.
-
-The development proves the additional coarse enclosure
-
-```text
-1/4 < betaPV ≤ (sqrt 5 - 1)/4 < 1/3.
-```
-
-It does not formalize an exact numerical or closed-form value of `betaPV`,
-uniqueness, infinite-dimensional attainment, or a dimension-convergence rate.
-
-## Proof map
-
-The [dependency graph](docs/lean_proof_graph.pdf) summarizes the proof; its
-[LaTeX source](docs/lean_proof_graph.tex) is included. The principal modules
-are:
-
-| Role | Source |
+| Paper | Lean declaration |
 | --- | --- |
-| Concrete quantum and Pál–Vértesi definitions | [`QuantumStrategy.lean`](I3322/QuantumStrategy.lean), [`PV.lean`](I3322/PV.lean) |
-| Realization of every finite PV chain as a quantum strategy | [`PVRealization.lean`](I3322/PVRealization.lean) |
-| Operator-to-coupling-table upper bound | [`OperatorReduction.lean`](I3322/OperatorReduction.lean) |
-| Coupling-table bound by the PV supremum | [`TableToPV.lean`](I3322/TableToPV.lean) |
-| Equality extraction and strictness | [`EqualityExtraction.lean`](I3322/EqualityExtraction.lean), [`FiniteSpine.lean`](I3322/FiniteSpine.lean) |
-| Final theorem assembly | [`MainTheorems.lean`](I3322/MainTheorems.lean) |
+| Sec. II A; pure states and projective measurements in Sec. III A | [QuantumStrategy](I3322/Statement.lean#L33), [QuantumStrategy.expectation](I3322/Statement.lean#L61) |
+| Eq. (1): Bell functional | [QuantumStrategy.value](I3322/Statement.lean#L82) |
+| Eq. (2): quantum supremum | [quantumSupremum](I3322/Statement.lean#L94) |
+| Eqs. (4)–(5): PV coefficients and value | [s, d](I3322/Statement.lean#L100), [PVChain.value](I3322/Statement.lean#L139) |
+| Eq. (7): finite PV domain and supremum | [PVChain](I3322/Statement.lean#L112), [betaPV](I3322/Statement.lean#L147) |
+| Theorem 1, Eq. (8): $I^*=\beta_{\mathrm{PV}}$ | [variational](I3322/Statement.lean#L258) |
+| Theorem 2: finite-dimensional nonattainment | [finiteDimensional_nonattainment](I3322/Statement.lean#L264) |
+| Sec. II B: every PV value is a quantum value | [pvValue_attained](I3322/Statement.lean#L281) |
+| Eq. (30): $1/4<\beta_{\mathrm{PV}}<1/3$ | [betaPV_bounds](I3322/Statement.lean#L288) |
 
-At declaration level, explicit PV realization proves
-`betaPV_le_quantumSupremum`; `QuantumStrategy.tableBound` and
-`CouplingTable.Ensemble.score_le_betaPV` prove the reverse inequality; and
-`CouplingTable.score_ne_betaPV` gives nonattainment within `QuantumStrategy`.
+Lean counts measurements and Schmidt coefficients from zero: `alice 0` is $A_1$ and
+`amplitude 0` is $\lambda_1$. States and Schmidt coefficients may be unnormalized;
+the definitions divide by $\langle\psi|\psi\rangle$ and $\sum_i\lambda_i^2$, respectively.
+Both suprema are Mathlib's `sSup`, which is the least upper bound of a set of reals
+that is nonempty and bounded above and is `0` otherwise; the file proves both
+properties for both sets. The last two rows are consistency checks: the Bell
+functional and Born rule reproduce Eq. (5) on the PV family, and $\beta_{\mathrm{PV}}$
+lies in the interval of Eq. (30).
 
-## Build
+## Proof correspondence
 
-The project is pinned to Lean, mathlib, and Physlib `v4.32.0`; the exact
-dependency commits are recorded in [`lake-manifest.json`](lake-manifest.json).
-All `I3322`-specific definitions and bridge theorems are local to this
-repository. Mathlib supplies the foundational real, complex, matrix,
-analytic, and order-theoretic results; Physlib supplies imported Schatten-
-and trace-norm infrastructure.
+Names below have prefix `I3322.` Links open the relevant proof declarations.
+
+| Paper | Lean declaration |
+| --- | --- |
+| Sec. II B: realization of Eq. (5) | [PVRealization.exists_quantumStrategy](I3322/PVRealization.lean#L1209) |
+| Eqs. (19), (23): marginals and $\Phi(\theta)$ | [CouplingTable.row, column, score](I3322/CouplingTable.lean#L28) |
+| Lemma 2, Eq. (24): spectral-weight bound | [QuantumStrategy.tableBound](I3322/OperatorReduction.lean#L1990) |
+| Eqs. (25)–(26); Appendix B: matching conditions | [CouplingTable.Ensemble.walkEnsemble_diagonalMatches, walkEnsemble_junctionMatches](I3322/Ensemble.lean#L617) |
+| Lemma 3, Eq. (27): $\Phi(\theta)\leq\beta_{\mathrm{PV}}$ | [CouplingTable.Ensemble.score_le_betaPV](I3322/TableToPV.lean#L262) |
+| Eq. (30); Appendix C: coarse bounds | [quarter_lt_betaPV, betaPV_lt_third](I3322/PVSupremum.lean#L20) |
+| Lemma 4, Eqs. (31)–(33): consequences of equality | [CouplingTable.exists_supportSpine](I3322/EqualityExtraction.lean#L1872), [CouplingTable.SupportSpine.toValueSpine](I3322/EqualityExtraction.lean#L2246), [CouplingTable.equalityChainOfTable](I3322/EqualityExtraction.lean#L2258) |
+| Lemma 5, Eqs. (40), (42): optimality conditions | [ChainStationarity.weighted_stationarity_of_finite_windows, label_stationarity_of_finite_windows](I3322/ChainStationarity.lean#L140), [ValueSpine.clamped_label_stationarity](I3322/FiniteSpine.lean#L1263) |
+| Lemma 5, Eqs. (41)–(42): contradiction | [EqualityChain.false](I3322/EqualityChain.lean#L141), [CouplingTable.score_ne_betaPV](I3322/EqualityExtraction.lean#L2264) |
+| Theorems 1–2 | [MainTheorems.lean](I3322/MainTheorems.lean) |
+
+The formal proof differs from the paper in two places. For Lemma 2, Lean
+applies Cauchy–Schwarz to Alice's and Bob's spectral decompositions separately
+and then symmetrizes the joint weights, averaging the entries at $(a,b)$ and
+$(-b,-a)$. For Lemmas 4–5, Lean extends the selected finite sequence of positive
+entries to a two-sided sequence whose spectral labels and coefficient ratios are
+constant beyond both endpoints, and obtains the condition of Eq. (40) from bounds
+on finite truncations. The PV realization uses zero padding to local dimension
+$2n+1$, which leaves the value in Eq. (5) unchanged.
+
+![Paper-to-Lean proof correspondence](docs/lean_proof_graph.svg)
+
+[Graph PDF](docs/lean_proof_graph.pdf) · [Figure source and build instructions](docs/README.md)
+
+**Scope.** The formal theorems quantify over arbitrary finite-dimensional
+complex pure states and binary projective measurements. The purification and
+Naimark reduction in Sec. III A, and the compactness arguments for Corollaries
+1–2, are not formalized. Neither an exact value of $\beta_{\mathrm{PV}}$ nor
+infinite-dimensional attainment is asserted.
+
+## Build and audit
+
+From the repository root:
 
 ```sh
 lake exe cache get
 lake build I3322
-```
-
-## Axiom audit
-
-```sh
 lake env lean Audit.lean
 ```
 
-For the two main theorems, Lean reports:
+The build and audit include `Statement.lean`. The final theorems have no
+reduction hypotheses; helper arguments such as `tableBound` are supplied by
+proved theorems. The audit reports only `[propext, Classical.choice, Quot.sound]`.
+The source contains no `sorry`, `admit`, or custom axiom.
 
-```text
-[propext, Classical.choice, Quot.sound]
-```
-
-The source contains no `sorry`, `admit`, or project-specific axiom.
-
-Here `propext`, `Classical.choice`, and `Quot.sound` are Lean's standard
-principles for propositional extensionality, classical choice, and quotients;
-none is a physical or mathematical assumption specific to `I3322`. No
-operator reduction, PV inequality, stationarity equation, or nonattainment
-step is postulated.
-
-## Citation and license
-
-Citation metadata are provided in [`CITATION.cff`](CITATION.cff). The source is
-available under the [`MIT License`](LICENSE).
+Lean, mathlib and Physlib are pinned to `v4.32.0`; exact dependency commits are
+in [lake-manifest.json](lake-manifest.json).
+[Citation](CITATION.cff) · [MIT License](LICENSE).

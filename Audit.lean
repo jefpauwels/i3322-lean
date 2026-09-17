@@ -1,4 +1,5 @@
 import I3322.MainTheorems
+import I3322.Statement
 import I3322.OperatorReduction
 import I3322.FiniteSpine
 import I3322.EqualityExtraction
@@ -13,9 +14,7 @@ import I3322.ChainStationarity
 /-!
 # Axiom audit
 
-Compile this file with `lake env lean Audit.lean`.  Lean prints the transitive
-assumptions of the main theorems and supporting results.  They are limited to
-the standard logical and quotient axioms used by Lean and mathlib.
+Run `lake env lean Audit.lean` to print the axioms used by these declarations.
 -/
 
 #print axioms I3322.CertifiedBounds.quarter_lt_lowerCertificate_value
@@ -63,8 +62,14 @@ the standard logical and quotient axioms used by Lean and mathlib.
 #print axioms I3322.quantumSupremum_le_betaPV_of_tableBound
 #print axioms I3322.quantumSupremum_eq_betaPV_of_tableBound
 #print axioms I3322.equalityTable_of_quantumMaximizer_of_tableBound
-#print axioms I3322.finiteDimensional_nonattainment_of_bridges
+#print axioms I3322.finiteDimensional_nonattainment_of_tableBound
 
 #print axioms I3322.quantumSupremum_eq_betaPV
 #print axioms I3322.variational
 #print axioms I3322.finiteDimensional_nonattainment
+
+-- Theorem 1, Theorem 2 and the consistency checks in `Statement.lean`.
+#print axioms I3322.Statement.variational
+#print axioms I3322.Statement.finiteDimensional_nonattainment
+#print axioms I3322.Statement.pvValue_attained
+#print axioms I3322.Statement.betaPV_bounds

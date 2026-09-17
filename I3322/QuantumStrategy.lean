@@ -6,17 +6,17 @@ import Mathlib.LinearAlgebra.UnitaryGroup
 import Mathlib.Tactic.NoncommRing
 
 /-!
-# Finite-dimensional quantum strategies for `I3322`
+# Finite-dimensional quantum strategies
 
-The state is a (not necessarily normalized) vector in a finite tensor-product
-basis, represented by its coefficient matrix.  A binary outcome-`1` effect is
-an orthogonal projection: a Hermitian idempotent complex matrix.  Expectations
-are finite Born-rule contractions divided by the squared norm of the state.
+The pure state is represented by a complex coefficient matrix in a finite
+tensor-product basis. Each binary outcome-`1` effect is a Hermitian matrix
+satisfying `P * P = P`. Born-rule expectations are divided by the squared
+norm of the state.
 -/
 
 namespace I3322
 
-/-- A finite-dimensional orthogonal projection, in a fixed basis. -/
+/-- A finite-dimensional projector, in a fixed basis. -/
 structure OrthogonalProjection (n : ℕ) where
   matrix : Matrix (Fin n) (Fin n) ℂ
   hermitian : matrix.conjTranspose = matrix
@@ -41,7 +41,7 @@ def one (n : ℕ) : OrthogonalProjection n where
 @[simp] theorem zero_matrix (n : ℕ) : (zero n).matrix = 0 := rfl
 @[simp] theorem one_matrix (n : ℕ) : (one n).matrix = 1 := rfl
 
-/-- Change the orthonormal basis of a projection by a unitary matrix. -/
+/-- Change the basis of a projection by a unitary matrix. -/
 noncomputable def conjugate {n : ℕ} (P : OrthogonalProjection n)
     (U : Matrix.unitaryGroup (Fin n) ℂ) : OrthogonalProjection n where
   matrix := U.val.conjTranspose * P.matrix * U.val
@@ -95,7 +95,7 @@ theorem stateNormSq_pos' (S : QuantumStrategy) : 0 < S.stateNormSq :=
 theorem stateNormSq_ne_zero (S : QuantumStrategy) : S.stateNormSq ≠ 0 :=
   ne_of_gt S.stateNormSq_pos'
 
-/-- The unnormalized complex Born contraction `⟨ψ| A ⊗ B |ψ⟩`. -/
+/-- The unnormalized complex expectation numerator `⟨ψ| A ⊗ B |ψ⟩`. -/
 noncomputable def bornNumerator (S : QuantumStrategy)
     (A : Matrix (Fin S.dimA) (Fin S.dimA) ℂ)
     (B : Matrix (Fin S.dimB) (Fin S.dimB) ℂ) : ℂ :=
@@ -103,7 +103,7 @@ noncomputable def bornNumerator (S : QuantumStrategy)
     ∑ k : Fin S.dimA, ∑ l : Fin S.dimB,
       star (S.state i j) * A i k * B j l * S.state k l
 
-/-- The same Born contraction in the single-space trace notation used in the
+/-- The same expectation numerator in the single-space trace notation used in the
 operator reduction.  The transpose on Bob's matrix comes from the
 coefficient-matrix convention for `state`. -/
 theorem bornNumerator_eq_trace (S : QuantumStrategy)

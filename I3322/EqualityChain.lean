@@ -2,16 +2,16 @@ import I3322.PVSupremum
 import Mathlib.Topology.Algebra.InfiniteSum.Basic
 
 /-!
-# The equality-chain contradiction
+# The contradiction in Lemma 5
 
 This file formalizes the propagation and square-summability contradiction in
-the last part of Lemma 6.  The two displayed recurrences are equations
-(40)--(41) of the manuscript.
+the last part of Lemma 5. The two displayed recurrences are Equations
+(41)--(42) of arXiv:2608.29734v1.
 -/
 
 namespace I3322
 
-/-- A two-sided equality chain after endpoint exclusion and differentiation. -/
+/-- A sequence satisfying the conditions of Lemma 5 after endpoint exclusion and differentiation. -/
 structure EqualityChain where
   label : ℤ → ℝ
   amplitude : ℤ → ℝ
@@ -46,7 +46,7 @@ theorem s_pos (q : EqualityChain) (i : ℤ) : 0 < s (q.label i) := by
     mul_pos (sub_pos.mpr hiR) (by linarith)
   nlinarith
 
-/-- Equations (40)--(41) uniquely propagate a constant state by one step. -/
+/-- Equations (41)--(42) uniquely propagate a constant state by one step. -/
 theorem propagate_one (q : EqualityChain) (i : ℤ)
     (hprev : q.label (i - 1) = q.tailLabel)
     (hcur : q.label i = q.tailLabel)
@@ -136,7 +136,7 @@ theorem amplitude_geometric (q : EqualityChain) :
         hstep, ih, pow_succ]
       ring
 
-/-- Lemma 6, final step: exact geometric growth with ratio greater than one
+/-- Lemma 5, final step: exact geometric growth with ratio greater than one
 is incompatible with square summability. -/
 theorem false (q : EqualityChain) : False := by
   let e : ℕ → ℤ := fun n => q.tailEnd + (n : ℤ)

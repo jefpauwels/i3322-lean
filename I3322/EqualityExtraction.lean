@@ -8,17 +8,11 @@ import I3322.ChainStationarity
 import I3322.FiniteSpine
 
 /-!
-# Equality-table rigidity
+# Consequences of equality for a finite spectral-weight matrix
 
-This file isolates the finite-table part of the nonattainment argument.  In
-particular, it records the exact first-variation coefficients (the ``cell
-gains'' of the paper), proves that their weighted average is the table score,
-and formalizes the crossed-cell argument which makes the positive support a
-monotone relation.
-
-The definitions use `sqrt (R*C) / R` rather than `sqrt (C/R)`.  They agree
-whenever `R > 0`, while the former has the correct value `0` when the opposite
-marginal vanishes and is substantially safer at boundary points.
+Lemma 4: the first-order condition at positive entries, the ordering of
+positive entries, and the selection of a finite sequence of positive entries.
+The endpoint arguments establish the conditions needed in Lemma 5.
 -/
 
 namespace I3322
@@ -26,24 +20,21 @@ namespace CouplingTable
 
 open scoped BigOperators
 
-/-- Coefficient of an infinitesimal increase of row `c` in the square-root
-part of the table score. -/
+/-- The row term `s(a)/2 · √(C_a/R_a)` of `h(a,b)` in Equation (34); zero if `R_a = 0`. -/
 noncomputable def leftSlope (θ : CouplingTable) (c : θ.Label) : ℝ :=
   if θ.row c = 0 then 0
   else s (θ.label c) * Real.sqrt (θ.row c * θ.column c) / (2 * θ.row c)
 
-/-- Coefficient of an infinitesimal increase of column `c` in the square-root
-part of the table score. -/
+/-- The column term `s(b)/2 · √(R_b/C_b)` of `h(a,b)` in Equation (34); zero if `C_b = 0`. -/
 noncomputable def rightSlope (θ : CouplingTable) (c : θ.Label) : ℝ :=
   if θ.column c = 0 then 0
   else s (θ.label c) * Real.sqrt (θ.row c * θ.column c) / (2 * θ.column c)
 
-/-- The one-cell first variation used in the equality case. -/
+/-- The quantity `h(a,b)` of Equation (34). -/
 noncomputable def gain (θ : CouplingTable) (a b : θ.Label) : ℝ :=
   d (θ.label a) (θ.label b) + θ.leftSlope a + θ.rightSlope b
 
-/-- Kronecker point mass, kept behind a definition so theorem statements do
-not require a computational `DecidableEq` instance on the label type. -/
+/-- A matrix with entry `1` at `(a,c)` and zero elsewhere. -/
 noncomputable def point (θ : CouplingTable) (a c : θ.Label) : ℝ := by
   classical
   exact if c = a then 1 else 0
@@ -64,8 +55,8 @@ theorem sum_point (θ : CouplingTable) (a : θ.Label) : ∑ c, θ.point a c = 1 
   classical
   simp [point]
 
-/-- Change one label while leaving the coupling weights fixed.  The explicit
-freshness premise is what is needed near a boundary label; it will later be
+/-- Change one label while leaving the matrix entries fixed.  The explicit
+distinct-label condition is what is needed near a boundary label; it will later be
 obtained uniformly from finiteness. -/
 noncomputable def relabelAt (θ : CouplingTable) (c : θ.Label) (x : ℝ)
     (hx : x ∈ Set.Icc (-1 : ℝ) 1)
@@ -119,7 +110,7 @@ theorem relabelAt_label_of_ne (θ : CouplingTable) (c k : θ.Label)
     (x : ℝ) (hx) (hfresh) (b : θ.Label) :
     (θ.relabelAt c x hx hfresh).column b = θ.column b := rfl
 
-/-- Move a fraction `t` of a table to the point mass in cell `(a,b)`. -/
+/-- Replace the matrix by `(1-t) * theta + t * delta_(a,b)`, as in Lemma 4. -/
 noncomputable def spike (θ : CouplingTable) (a b : θ.Label) (t : ℝ)
     (ht0 : 0 ≤ t) (ht1 : t ≤ 1) : CouplingTable := by
   classical
@@ -162,8 +153,8 @@ theorem spike_column (θ : CouplingTable) (a b : θ.Label) (t : ℝ)
     simp [sum_point]
   · simp [point_of_ne θ hcb]
 
-/-- The score along the affine segment from `θ` to a point mass.  This is
-defined for every real parameter; on `[0,1]` it is the score of `spike`. -/
+/-- The value along the affine segment from `θ` to a matrix with one nonzero entry.  This is
+defined for every real parameter; on `[0,1]` it is the value of `spike`. -/
 noncomputable def spikeScore (θ : CouplingTable) (a b : θ.Label) (t : ℝ) : ℝ :=
   by
     classical
@@ -216,7 +207,7 @@ theorem score_spike_eq_spikeScore (θ : CouplingTable) (a b : θ.Label) (t : ℝ
   classical
   simp [spikeScore, score_eq_parts, junctionPart]
 
-/-- Per-label derivative of the square-root part along a spike segment. -/
+/-- Per-label derivative of the square-root part along a variation. -/
 noncomputable def junctionSlopeTerm (θ : CouplingTable) (a b c : θ.Label) : ℝ :=
   -s (θ.label c) * Real.sqrt (θ.row c * θ.column c) +
     θ.point a c * θ.leftSlope c + θ.point b c * θ.rightSlope c
@@ -243,8 +234,8 @@ theorem sum_junctionSlopeTerm (θ : CouplingTable) (a b : θ.Label) :
       simpa only using (Finset.sum_neg_distrib (s := Finset.univ)
         (fun c => s (θ.label c) * Real.sqrt (θ.row c * θ.column c)))
 
-/-- The square-root summand is differentiable in every spike direction whose
-source row and target column are positive.  Marginals which vanish elsewhere
+/-- The square-root summand is differentiable in every variation whose
+row and column are positive.  Marginals which vanish elsewhere
 give identically zero summands, so no derivative of `sqrt` at zero is used. -/
 theorem hasDerivAt_spikeJunctionTerm (θ : CouplingTable) (a b c : θ.Label)
     (hRa : 0 < θ.row a) (hCb : 0 < θ.column b) :
@@ -319,7 +310,7 @@ theorem hasDerivAt_spikeJunctionTerm (θ : CouplingTable) (a b c : θ.Label)
   norm_num at hmul ⊢
   exact hmul
 
-/-- Exact first derivative of the table score along a point-mass spike. -/
+/-- Exact first derivative of the matrix value along a variation toward a matrix with one nonzero entry. -/
 theorem hasDerivAt_spikeScore (θ : CouplingTable) (a b : θ.Label)
     (hRa : 0 < θ.row a) (hCb : 0 < θ.column b) :
     HasDerivAt (θ.spikeScore a b) (θ.gain a b - θ.score) 0 := by
@@ -360,8 +351,8 @@ theorem hasDerivAt_spikeScore (θ : CouplingTable) (a b : θ.Label)
   rw [hslope]
   exact hsum
 
-/-- At an equality table, the gain of every direction with a positive source
-row and positive target column is at most the optimum. -/
+/-- If `Φ(θ) = β_PV`, then `h(a,b) ≤ β_PV` whenever `R_a > 0` and `C_b > 0`,
+Equation (35). -/
 theorem gain_le_betaPV (θ : CouplingTable) (hscore : θ.score = betaPV)
     (a b : θ.Label) (hRa : 0 < θ.row a) (hCb : 0 < θ.column b) :
     θ.gain a b ≤ betaPV := by
@@ -435,8 +426,8 @@ theorem column_mul_rightSlope (θ : CouplingTable) (c : θ.Label) :
   · rw [rightSlope, if_neg hC]
     field_simp
 
-/-- Euler's identity for the homogeneous square-root term: the table-weighted
-average of the cell gains is exactly the table score. -/
+/-- The `θ`-weighted average of the numbers `h(a,b)` is `Φ(θ)`,
+as in Lemma 4, Step 1. -/
 theorem sum_weight_mul_gain (θ : CouplingTable) :
     (∑ a, ∑ b, θ.weight a b * θ.gain a b) = θ.score := by
   classical
@@ -489,8 +480,8 @@ theorem sum_weight_mul_gain (θ : CouplingTable) :
         ring
       rw [add_assoc, hjunction]
 
-/-- If every cell gain is bounded by `betaPV`, equality of the table score
-forces every occupied cell to be tight. -/
+/-- If `h(a,b) ≤ betaPV` for every pair, then `Φ(θ) = betaPV` forces
+`h(a,b) = betaPV` at every positive entry, Equation (36). -/
 theorem occupied_tight_of_cellBound (θ : CouplingTable)
     (hscore : θ.score = betaPV)
     (hcell : ∀ a b, θ.gain a b ≤ betaPV) {a b : θ.Label}
@@ -516,9 +507,7 @@ theorem occupied_tight_of_cellBound (θ : CouplingTable)
   rw [θ.totalWeight] at hsum
   simp at hsum
 
-/-- Every positive cell of an equality table is tight.  Unlike the auxiliary
-version above, this theorem derives the required cell bounds from the actual
-one-sided variations and makes no assumption about unused rows or columns. -/
+/-- Every positive entry satisfies the equality in Equation (36). -/
 theorem occupied_tight (θ : CouplingTable) (hscore : θ.score = betaPV)
     {a b : θ.Label} (hab : 0 < θ.weight a b) : θ.gain a b = betaPV := by
   have hbound : θ.gain a b ≤ betaPV := θ.gain_le_betaPV hscore a b
@@ -555,15 +544,15 @@ theorem occupied_tight (θ : CouplingTable) (hscore : θ.score = betaPV)
   rw [θ.totalWeight] at hsum
   simp at hsum
 
-/-- The mixed second difference of `d` is exactly the product appearing in
-the crossed-cell argument. -/
+/-- The mixed second difference of `d` is the product of label differences that
+appears when Equation (36) is applied to crossed pairs. -/
 theorem d_cross_difference (a a' b b' : ℝ) :
     d a b' + d a' b - (d a b + d a' b') = (a - a') * (b' - b) := by
   unfold d
   ring
 
-/-- Tight occupied cells and the upper gain bound make the positive support
-a monotone relation on the ordered real labels. -/
+/-- Equality at positive entries and the bound `h ≤ betaPV` order the positive
+entries: if `θ_ab > 0`, `θ_a'b' > 0` and `a < a'`, then `b ≤ b'`. -/
 theorem occupied_ordered_of_cellBound (θ : CouplingTable)
     (hscore : θ.score = betaPV)
     (hcell : ∀ a b, θ.gain a b ≤ betaPV)
@@ -587,7 +576,7 @@ theorem occupied_ordered_of_cellBound (θ : CouplingTable)
     mul_pos_of_neg_of_neg (sub_neg.mpr haa') (sub_neg.mpr hbb')
   linarith
 
-/-- Crossed-cell monotonicity for an equality table. -/
+/-- Lemma 4, Step 2: the positive entries of a matrix with `Φ(θ) = betaPV` are ordered. -/
 theorem occupied_ordered (θ : CouplingTable) (hscore : θ.score = betaPV)
     {a a' b b' : θ.Label}
     (hab : 0 < θ.weight a b) (ha'b' : 0 < θ.weight a' b')
@@ -609,40 +598,40 @@ theorem occupied_ordered (θ : CouplingTable) (hscore : θ.score = betaPV)
     mul_pos_of_neg_of_neg (sub_neg.mpr haa') (sub_neg.mpr hbb')
   linarith
 
-/-- A strictly increasing occupied edge. -/
+/-- A positive entry `(a, b)` with `a < b`. -/
 def IncreasingEdge (θ : CouplingTable) (a b : θ.Label) : Prop :=
   0 < θ.weight a b ∧ θ.label a < θ.label b
 
-/-- Reachability by strictly increasing occupied edges. -/
+/-- `finish` is reached from `start` through positive entries with strictly increasing labels. -/
 def IncreasingReach (θ : CouplingTable) (start finish : θ.Label) : Prop :=
   Relation.ReflTransGen θ.IncreasingEdge start finish
 
-/-- Moving one step to an off-diagonal predecessor.  The order condition is
-oriented in the direction in which the predecessor path is traversed. -/
+/-- One step back along a positive entry `(predecessor, current)` with
+`predecessor < current`: moving to the left along an increasing sequence. -/
 def DecreasingPredecessorEdge (θ : CouplingTable) (current predecessor : θ.Label) : Prop :=
   0 < θ.weight predecessor current ∧ θ.label predecessor < θ.label current
 
-/-- Reachability while following off-diagonal predecessors to the left. -/
+/-- `finish` is reached from `start` by repeated steps to the left along an increasing sequence. -/
 def DecreasingPredecessorReach (θ : CouplingTable) (start finish : θ.Label) : Prop :=
   Relation.ReflTransGen θ.DecreasingPredecessorEdge start finish
 
-/-- A strictly decreasing occupied edge. -/
+/-- A positive entry `(a, b)` with `a > b`. -/
 def DecreasingEdge (θ : CouplingTable) (a b : θ.Label) : Prop :=
   0 < θ.weight a b ∧ θ.label b < θ.label a
 
 def DecreasingReach (θ : CouplingTable) (start finish : θ.Label) : Prop :=
   Relation.ReflTransGen θ.DecreasingEdge start finish
 
-/-- Follow predecessors of a decreasing path; their labels strictly increase. -/
+/-- One step back along a positive entry `(predecessor, current)` with
+`predecessor > current`: moving to the left along a decreasing sequence. -/
 def IncreasingPredecessorEdge (θ : CouplingTable) (current predecessor : θ.Label) : Prop :=
   0 < θ.weight predecessor current ∧ θ.label current < θ.label predecessor
 
 def IncreasingPredecessorReach (θ : CouplingTable) (start finish : θ.Label) : Prop :=
   Relation.ReflTransGen θ.IncreasingPredecessorEdge start finish
 
-/-- Starting with an increasing occupied edge, finite monotonicity produces a
-reachable sink: it has a strictly increasing occupied edge entering it and no
-off-diagonal occupied edge leaving it. -/
+/-- An increasing sequence of positive entries reaches a last label `c` such that the
+only positive entry with first coordinate `c` is `(c, c)`. -/
 theorem exists_occupied_sink (θ : CouplingTable) (hscore : θ.score = betaPV)
     {a b : θ.Label} (hab : 0 < θ.weight a b)
     (hlt : θ.label a < θ.label b) :
@@ -687,7 +676,8 @@ theorem exists_occupied_sink (θ : CouplingTable) (hscore : θ.score = betaPV)
     linarith
   · exact θ.weight_nonneg sink z
 
-/-- The symmetric source statement, obtained by following predecessors. -/
+/-- An increasing sequence of positive entries starts at a label `c` such that the
+only positive entry with second coordinate `c` is `(c, c)`. -/
 theorem exists_occupied_source (θ : CouplingTable) (hscore : θ.score = betaPV)
     {a b : θ.Label} (hab : 0 < θ.weight a b)
     (hlt : θ.label a < θ.label b) :
@@ -736,7 +726,8 @@ theorem exists_occupied_source (θ : CouplingTable) (hscore : θ.score = betaPV)
     linarith
   · exact θ.weight_nonneg z source
 
-/-- Sink extraction for a decreasing initial edge. -/
+/-- A decreasing sequence of positive entries reaches a last label `c` such that the
+only positive entry with first coordinate `c` is `(c, c)`. -/
 theorem exists_occupied_sink_of_decreasing (θ : CouplingTable)
     (hscore : θ.score = betaPV) {a b : θ.Label}
     (hab : 0 < θ.weight a b) (hlt : θ.label b < θ.label a) :
@@ -781,7 +772,8 @@ theorem exists_occupied_sink_of_decreasing (θ : CouplingTable)
     linarith
   · exact θ.weight_nonneg sink z
 
-/-- Source extraction for a decreasing initial edge. -/
+/-- A decreasing sequence of positive entries starts at a label `c` such that the
+only positive entry with second coordinate `c` is `(c, c)`. -/
 theorem exists_occupied_source_of_decreasing (θ : CouplingTable)
     (hscore : θ.score = betaPV) {a b : θ.Label}
     (hab : 0 < θ.weight a b) (hlt : θ.label b < θ.label a) :
@@ -851,8 +843,8 @@ theorem column_eq_loop_of_no_offdiag_in (θ : CouplingTable) (c : θ.Label)
     exact hin z hzc
   · simp
 
-/-- At an extracted sink, the incoming marginal strictly exceeds the outgoing
-marginal. -/
+/-- At the last selected label `c_L`, `R_{c_L} = θ_{c_L c_L} < C_{c_L}`: the column
+marginal strictly exceeds the row marginal. -/
 theorem sink_row_lt_column (θ : CouplingTable) {sink pred : θ.Label}
     (hpred : 0 < θ.weight pred sink) (hpredLt : θ.label pred < θ.label sink)
     (hout : ∀ z, z ≠ sink → θ.weight sink z = 0) :
@@ -877,8 +869,8 @@ theorem sink_row_lt_column (θ : CouplingTable) {sink pred : θ.Label}
   rw [hrow, hcolumn]
   linarith
 
-/-- At an extracted source, the outgoing marginal strictly exceeds the
-incoming marginal. -/
+/-- At the first selected label `c_0`, `C_{c_0} = θ_{c_0 c_0} < R_{c_0}`: the row
+marginal strictly exceeds the column marginal. -/
 theorem source_column_lt_row (θ : CouplingTable) {source next : θ.Label}
     (hnext : 0 < θ.weight source next) (hnextLt : θ.label source < θ.label next)
     (hin : ∀ z, z ≠ source → θ.weight z source = 0) :
@@ -904,15 +896,15 @@ theorem source_column_lt_row (θ : CouplingTable) {source next : θ.Label}
   linarith
 
 /-- Pulling a common nonnegative scalar out of both factors under a square
-root.  This is the elementary identity which makes all junctions away from a
-spiked label scale exactly linearly. -/
+root.  This is the elementary identity which makes all neighboring-coefficient terms away from a
+perturbed label scale exactly linearly. -/
 theorem sqrt_scaled_product (q x y : ℝ) (hq : 0 ≤ q) :
     Real.sqrt ((q * x) * (q * y)) = q * Real.sqrt (x * y) := by
   rw [show (q * x) * (q * y) = q ^ 2 * (x * y) by ring]
   rw [Real.sqrt_mul (sq_nonneg q), Real.sqrt_sq hq]
 
-/-- Exact score formula for adding a loop at a label whose column marginal
-vanishes. -/
+/-- Exact value of `Φ` after adding weight to the diagonal entry `(c, c)` at a label
+whose column marginal vanishes. -/
 theorem spikeScore_self_of_column_zero (θ : CouplingTable) (c : θ.Label)
     (hC : θ.column c = 0) (t : ℝ) (ht0 : 0 ≤ t) (ht1 : t ≤ 1) :
     θ.spikeScore c c t =
@@ -955,8 +947,8 @@ theorem spikeScore_self_of_column_zero (θ : CouplingTable) (c : θ.Label)
   rw [hsum, score_eq_parts]
   ring
 
-/-- Row/column-dual exact formula for a loop spike at a label whose row
-marginal vanishes. -/
+/-- Exact value of `Φ` after adding weight to the diagonal entry `(c, c)` at a label
+whose row marginal vanishes. -/
 theorem spikeScore_self_of_row_zero (θ : CouplingTable) (c : θ.Label)
     (hR : θ.row c = 0) (t : ℝ) (ht0 : 0 ≤ t) (ht1 : t ≤ 1) :
     θ.spikeScore c c t =
@@ -999,16 +991,16 @@ theorem spikeScore_self_of_row_zero (θ : CouplingTable) (c : θ.Label)
   rw [hsum, score_eq_parts]
   ring
 
-/-- First-label moment of a row, i.e. the derivative of its diagonal term
+/-- Sum weighted by the first label of a row, i.e. the derivative of its diagonal term
 when that row label moves. -/
 noncomputable def rowMoment (θ : CouplingTable) (c : θ.Label) : ℝ :=
   ∑ b, (θ.label b + 1 / 2) * θ.weight c b
 
-/-- Second-label moment of a column. -/
+/-- Sum weighted by the second label of a column. -/
 noncomputable def columnMoment (θ : CouplingTable) (c : θ.Label) : ℝ :=
   ∑ a, (θ.label a - 1 / 2) * θ.weight a c
 
-/-- Exact score change when moving a label with zero incoming marginal. -/
+/-- Exact change of `Φ` when a label with zero column marginal is moved. -/
 theorem relabelAt_score_of_column_zero (θ : CouplingTable) (c : θ.Label)
     (x : ℝ) (hx : x ∈ Set.Icc (-1 : ℝ) 1)
     (hfresh : ∀ k, k ≠ c → x ≠ θ.label k)
@@ -1077,8 +1069,7 @@ theorem relabelAt_score_of_column_zero (θ : CouplingTable) (c : θ.Label)
   rw [hdiag, hjunction]
   ring
 
-/-- Exact row/column-dual score change when moving a label with zero outgoing
-marginal. -/
+/-- Exact change of `Φ` when a label with zero row marginal is moved. -/
 theorem relabelAt_score_of_row_zero (θ : CouplingTable) (c : θ.Label)
     (x : ℝ) (hx : x ∈ Set.Icc (-1 : ℝ) 1)
     (hfresh : ∀ k, k ≠ c → x ≠ θ.label k)
@@ -1147,8 +1138,8 @@ theorem relabelAt_score_of_row_zero (θ : CouplingTable) (c : θ.Label)
   rw [hdiag, hjunction]
   ring
 
-/-- A finite injective label set has a punctured neighbourhood of any one of
-its labels which contains no other label. -/
+/-- A label in a finite set can be changed slightly while remaining distinct
+from every other label. -/
 theorem exists_fresh_radius (θ : CouplingTable) (c : θ.Label) :
     ∃ ε : ℝ, 0 < ε ∧
       ∀ x : ℝ, |x - θ.label c| < ε →
@@ -1225,8 +1216,8 @@ theorem neg_three_halves_mul_column_le_columnMoment
       apply mul_le_mul_of_nonneg_right _ (θ.weight_nonneg a c)
       linarith [((θ.label_mem a).1)]
 
-/-- Exact smooth expression obtained after moving a singular endpoint
-`σ = ±1` to `σ(1-δ)` and adding loop mass `α²δ`. -/
+/-- The endpoint perturbation of Appendix C: the endpoint label `σ = ±1` is moved to
+`σ(1-δ)` and weight `α²δ` is added to its diagonal entry. -/
 noncomputable def boundarySpikeCurve (θ : CouplingTable) (c : θ.Label)
     (M A σ α δ : ℝ) : ℝ :=
   (1 - α ^ 2 * δ) * (θ.score - σ * δ * A) +
@@ -1355,7 +1346,7 @@ theorem singular_junction_rewrite {M σ α δ : ℝ}
     α * δ * Real.sqrt ((2 - δ) * B)
   nlinarith
 
-/-- Every admissible singular source perturbation is still bounded by
+/-- Every admissible endpoint perturbation is still bounded by
 `betaPV`; the left-hand side is the exact smooth curve above. -/
 theorem boundarySourceCurve_le_betaPV (θ : CouplingTable)
     (hscore : θ.score = betaPV) (c : θ.Label)
@@ -1411,7 +1402,7 @@ theorem boundarySourceCurve_le_betaPV (θ : CouplingTable)
   rw [hscore] at hbound
   convert hbound using 1 <;> ring
 
-/-- Row/column-dual singular sink perturbation bound. -/
+/-- The endpoint perturbation bound with the row and column exchanged. -/
 theorem boundarySinkCurve_le_betaPV (θ : CouplingTable)
     (hscore : θ.score = betaPV) (c : θ.Label)
     {σ α δ : ℝ} (hlabel : θ.label c = σ) (hσ : σ ^ 2 = 1)
@@ -1495,9 +1486,7 @@ theorem signed_columnMoment_le (θ : CouplingTable) (c : θ.Label) {σ : ℝ}
     have h := θ.neg_three_halves_mul_column_le_columnMoment c
     linarith
 
-/-- Abstract form of the exceptional-endpoint argument.  The `hbound`
-premise follows from a relabelled-and-spiked coupling table for every
-sufficiently small `δ`. -/
+/-- The exceptional-endpoint argument of Appendix C, applied to a varying matrix. -/
 theorem singularEndpoint_false (θ : CouplingTable)
     (hscore : θ.score = betaPV) (c : θ.Label) {M A σ : ℝ}
     (hlabel : θ.label c = σ) (hσ : σ ^ 2 = 1) (hM : 0 < M)
@@ -1576,8 +1565,8 @@ theorem singularEndpoint_false (θ : CouplingTable)
     simpa [mul_comm] using hnonpos
   exact (not_le_of_gt (mul_pos hderivPos hη)) hproduct
 
-/-- The smooth reparametrization `t = u^2` of a loop spike.  The parameter
-`M` is the nonzero marginal at the endpoint. -/
+/-- The reparametrization `t = u^2` of the perturbation that adds weight to a
+diagonal entry.  The parameter `M` is the nonzero marginal at the endpoint. -/
 noncomputable def loopSpikeCurve (θ : CouplingTable) (c : θ.Label)
     (M : ℝ) (u : ℝ) : ℝ :=
   (1 - u ^ 2) * θ.score + u ^ 2 * d (θ.label c) (θ.label c) +
@@ -1623,9 +1612,9 @@ theorem loopSpikeCurve_zero (θ : CouplingTable) (c : θ.Label) (M : ℝ) :
     θ.loopSpikeCurve c M 0 = θ.score := by
   simp [loopSpikeCurve]
 
-/-- If the one nonzero endpoint marginal is positive and `s(c)>0`, the
-quadratically parametrized loop spike has strictly positive right derivative,
-so it cannot be maximal at zero. -/
+/-- If the one nonzero endpoint marginal is positive and `s(c) > 0`, adding weight
+to the diagonal entry increases `Φ` to first order, so the unperturbed matrix is
+not a maximizer. -/
 theorem not_isMaxOn_loopSpikeCurve (θ : CouplingTable) (c : θ.Label)
     {M : ℝ} (hM : 0 < M) (hs : 0 < s (θ.label c)) :
     ¬ IsMaxOn (θ.loopSpikeCurve c M) (Set.Icc (0 : ℝ) 1) 0 := by
@@ -1644,7 +1633,7 @@ theorem not_isMaxOn_loopSpikeCurve (θ : CouplingTable) (c : θ.Label)
   have : s (θ.label c) * Real.sqrt M ≤ 0 := by simpa using hnonpos
   exact (not_le_of_gt (mul_pos hs hsqrt)) this
 
-/-- An equality table cannot have a positive row, zero column, and an
+/-- An equality matrix cannot have a positive row, zero column, and an
 interior label. -/
 theorem s_eq_zero_of_column_zero (θ : CouplingTable)
     (hscore : θ.score = betaPV) (c : θ.Label)
@@ -1749,8 +1738,7 @@ theorem row_pos_of_column_pos_eq (θ : CouplingTable)
       exact θ.boundarySinkCurve_le_betaPV hscore c rfl hσ hα hδ0 hδ1
         ht hR hfresh)
 
-/-- A positive loop in an equality table cannot sit at either singular label
-`-1` or `1`. -/
+/-- If `Φ(θ) = betaPV`, no positive diagonal entry has label `-1` or `1`. -/
 theorem loop_label_mem_Ioo (θ : CouplingTable) (hscore : θ.score = betaPV)
     (c : θ.Label) (hloop : 0 < θ.weight c c) :
     θ.label c ∈ Set.Ioo (-1 : ℝ) 1 := by
@@ -1769,7 +1757,7 @@ theorem loop_label_mem_Ioo (θ : CouplingTable) (hscore : θ.score = betaPV)
     simp [hc, d, s] at htight
     linarith [quarter_lt_betaPV]
 
-/-- A table supported on its diagonal has score at most `1/4`. -/
+/-- A matrix supported on its diagonal has value at most `1/4`. -/
 theorem score_le_quarter_of_offdiag_zero (θ : CouplingTable)
     (hoff : ∀ a b, a ≠ b → θ.weight a b = 0) :
     θ.score ≤ (1 / 4 : ℝ) := by
@@ -1839,7 +1827,7 @@ theorem score_le_quarter_of_offdiag_zero (θ : CouplingTable)
       rw [htotalDiag]
       norm_num
 
-/-- An equality table must contain an occupied non-diagonal cell. -/
+/-- If `Φ(θ) = betaPV`, at least one positive entry is off the diagonal. -/
 theorem exists_offdiag_weight_pos_of_eq (θ : CouplingTable)
     (hscore : θ.score = betaPV) :
     ∃ a b, a ≠ b ∧ 0 < θ.weight a b := by
@@ -1852,9 +1840,9 @@ theorem exists_offdiag_weight_pos_of_eq (θ : CouplingTable)
   rw [hscore] at hle
   exact (not_le_of_gt quarter_lt_betaPV) hle
 
-/-- A finite, strictly monotone occupied path between an extracted source and
-sink.  The endpoint maximality conditions say precisely that only a loop may
-enter the source or leave the sink. -/
+/-- Lemma 4, Step 3: a finite strictly monotone sequence of positive entries.  The only
+possible positive entry with second coordinate `c_0` is `(c_0, c_0)`, and the only
+possible positive entry with first coordinate `c_L` is `(c_L, c_L)`. -/
 structure SupportSpine (θ : CouplingTable) where
   n : ℕ
   n_pos : 0 < n
@@ -1880,7 +1868,7 @@ theorem decreasingReach_label_ge (θ : CouplingTable) {a b : θ.Label}
   | refl => exact le_rfl
   | tail hxy hyz ih => exact le_trans (le_of_lt hyz.2) ih
 
-/-- The graph-theoretic extraction, packaged as a finite indexed spine. -/
+/-- Select a finite sequence of positive entries as in Lemma 4. -/
 theorem exists_supportSpine (θ : CouplingTable)
     (hscore : θ.score = betaPV) : Nonempty θ.SupportSpine := by
   classical
@@ -2155,9 +2143,7 @@ theorem sink_ratio_lt_one {θ : CouplingTable} (p : θ.SupportSpine)
     (div_lt_one (p.column_pos hscore (Fin.last p.n))).2 p.sink_row_lt_column
   nlinarith
 
-/-- Every vertex on the extracted spine is strictly inside the label
-interval.  The source and sink carry positive loops, hence are interior;
-monotonicity then traps every intermediate vertex between them. -/
+/-- Every selected label lies strictly between `-1` and `1`. -/
 theorem label_mem_Ioo {θ : CouplingTable} (p : θ.SupportSpine)
     (hscore : θ.score = betaPV) (j : Fin (p.n + 1)) :
     θ.label (p.node j) ∈ Set.Ioo (-1 : ℝ) 1 := by
@@ -2175,7 +2161,7 @@ theorem label_mem_Ioo {θ : CouplingTable} (p : θ.SupportSpine)
     exact ⟨lt_of_lt_of_le hsink.1 (hanti (Fin.le_last j)),
       lt_of_le_of_lt (hanti (Fin.zero_le j)) hsource.2⟩
 
-/-- The left square-root slope is the reciprocal-ratio junction term. -/
+/-- The first square-root term in Equation (41). -/
 theorem leftSlope_eq_ratio {θ : CouplingTable} (p : θ.SupportSpine)
     (hscore : θ.score = betaPV) (j : Fin (p.n + 1)) :
     θ.leftSlope (p.node j) =
@@ -2197,7 +2183,7 @@ theorem leftSlope_eq_ratio {θ : CouplingTable} (p : θ.SupportSpine)
   rw [hsquare]
   ring
 
-/-- The right square-root slope is the forward-ratio junction term. -/
+/-- The second square-root term in Equation (41). -/
 theorem rightSlope_eq_ratio {θ : CouplingTable} (p : θ.SupportSpine)
     (hscore : θ.score = betaPV) (j : Fin (p.n + 1)) :
     θ.rightSlope (p.node j) =
@@ -2207,8 +2193,7 @@ theorem rightSlope_eq_ratio {θ : CouplingTable} (p : θ.SupportSpine)
   rw [if_neg hC]
   ring
 
-/-- Tightness of a positive path cell is exactly the finite-spine value
-recurrence. -/
+/-- A positive selected entry gives the recurrence in Equation (41). -/
 theorem edge_value {θ : CouplingTable} (p : θ.SupportSpine)
     (hscore : θ.score = betaPV) (j : Fin p.n) :
     betaPV = d (θ.label (p.node j.castSucc)) (θ.label (p.node j.succ)) +
@@ -2219,8 +2204,7 @@ theorem edge_value {θ : CouplingTable} (p : θ.SupportSpine)
     p.rightSlope_eq_ratio hscore] at htight
   exact htight.symm
 
-/-- Tightness of the positive source loop gives the constant left-tail value
-equation. -/
+/-- The first diagonal entry gives the constant left-tail recurrence. -/
 theorem left_value {θ : CouplingTable} (p : θ.SupportSpine)
     (hscore : θ.score = betaPV) :
     betaPV = d (θ.label (p.node 0)) (θ.label (p.node 0)) +
@@ -2231,8 +2215,7 @@ theorem left_value {θ : CouplingTable} (p : θ.SupportSpine)
     p.rightSlope_eq_ratio hscore] at htight
   exact htight.symm
 
-/-- Tightness of the positive sink loop gives the constant right-tail value
-equation. -/
+/-- The last diagonal entry gives the constant right-tail recurrence. -/
 theorem right_value {θ : CouplingTable} (p : θ.SupportSpine)
     (hscore : θ.score = betaPV) :
     betaPV =
@@ -2247,9 +2230,7 @@ theorem right_value {θ : CouplingTable} (p : θ.SupportSpine)
     p.rightSlope_eq_ratio hscore] at htight
   exact htight.symm
 
-/-- The raw finite spine canonically associated with a support path.  Its
-geometric tails are already square-summable because the source ratio is
-greater than one and the sink ratio is less than one. -/
+/-- Extend the endpoint ratios constantly. The auxiliary coefficients decay geometrically at both ends. -/
 noncomputable def toFiniteSpineCore {θ : CouplingTable} (p : θ.SupportSpine)
     (hscore : θ.score = betaPV) : FiniteSpineCore where
   n := p.n
@@ -2261,8 +2242,7 @@ noncomputable def toFiniteSpineCore {θ : CouplingTable} (p : θ.SupportSpine)
   left_ratio_gt_one := p.source_ratio_gt_one hscore
   right_ratio_lt_one := p.sink_ratio_lt_one hscore
 
-/-- The extracted support path satisfies all value equations required by the
-generic finite-window stationarity argument. -/
+/-- The selected sequence satisfies the value recurrence used in Lemma 5. -/
 noncomputable def toValueSpine {θ : CouplingTable} (p : θ.SupportSpine)
     (hscore : θ.score = betaPV) : ValueSpine where
   toFiniteSpineCore := p.toFiniteSpineCore hscore
@@ -2273,20 +2253,20 @@ noncomputable def toValueSpine {θ : CouplingTable} (p : θ.SupportSpine)
 
 end SupportSpine
 
-/-- Equality of a finite coupling table with the PV supremum would construct
-the forbidden two-sided equality chain. -/
+/-- Equality of a finite spectral-weight matrix with the PV supremum would construct
+the forbidden sequence satisfying the conditions of Lemma 5. -/
 theorem equalityChainOfTable (θ : CouplingTable)
     (hscore : θ.score = betaPV) : Nonempty EqualityChain := by
   obtain ⟨p⟩ := θ.exists_supportSpine hscore
   exact (p.toValueSpine hscore).nonempty_equalityChain
 
-/-- No finite coupling table attains the PV supremum. -/
+/-- No finite spectral-weight matrix attains the PV supremum. -/
 theorem score_ne_betaPV (θ : CouplingTable) : θ.score ≠ betaPV := by
   intro hscore
   obtain ⟨q⟩ := θ.equalityChainOfTable hscore
   exact q.false
 
-/-- Equivalently, every finite coupling table lies strictly below the PV
+/-- Equivalently, every finite spectral-weight matrix lies strictly below the PV
 supremum. -/
 theorem score_lt_betaPV (θ : CouplingTable) : θ.score < betaPV :=
   lt_of_le_of_ne (Ensemble.score_le_betaPV θ) θ.score_ne_betaPV

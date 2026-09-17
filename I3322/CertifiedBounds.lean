@@ -5,8 +5,8 @@ import Mathlib.Tactic.NormNum
 /-!
 # Exact coarse bounds for the PV supremum
 
-This file starts the end-to-end formalization of Appendix E.  The lower
-bound is the exact length-29 rational certificate from equation (E2).
+This file formalizes the exact length-29 rational certificate in Appendix C
+of arXiv:2608.29734v1, proving the lower bound in Equation (30).
 -/
 
 namespace I3322

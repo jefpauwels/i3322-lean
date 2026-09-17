@@ -1,12 +1,11 @@
 import I3322.CouplingTable
 
 /-!
-# Flipped-transpose symmetrization of coupling tables
+# Symmetrization of spectral-weight matrices
 
-The Bell coefficient satisfies `d (-b) (-a) = d a b`.  Consequently a
-table can be averaged with its flipped transpose without changing its linear
-score.  The geometric-mean part only increases enough to dominate the two
-mirror-sector Cauchy--Schwarz bounds arising before symmetrization.
+Since `d (-b) (-a) = d a b`, averaging a matrix with the matrix obtained
+by transposition and `c ↦ -c` preserves the linear part of its value.
+The square-root terms give the required Cauchy--Schwarz bound.
 -/
 
 namespace I3322
@@ -15,7 +14,7 @@ open scoped BigOperators
 
 namespace CouplingTable
 
-/-- A label set closed under the physical mirror operation `c ↦ -c`. -/
+/-- A label set closed under `c ↦ -c`. -/
 structure Negation (θ : CouplingTable) where
   neg : θ.Label → θ.Label
   involutive : Function.Involutive neg
@@ -25,7 +24,7 @@ namespace Negation
 
 variable {θ : CouplingTable} (N : θ.Negation)
 
-/-- The mirror operation as an equivalence of the finite label type. -/
+/-- The map `c ↦ -c` permutes the finite label set. -/
 def equiv : θ.Label ≃ θ.Label where
   toFun := N.neg
   invFun := N.neg
@@ -50,7 +49,7 @@ theorem d_neg_swap (a b : ℝ) : d (-b) (-a) = d a b := by
   unfold d
   ring
 
-/-- Average a table with the transpose obtained by flipping both labels. -/
+/-- Average a matrix with the transpose obtained by flipping both labels. -/
 noncomputable def symmetrize (θ : CouplingTable) (N : θ.Negation) :
     CouplingTable where
   Label := θ.Label
@@ -148,7 +147,7 @@ theorem flipped_linear_eq (θ : CouplingTable) (N : θ.Negation) :
       Fintype.sum_prod_type (fun z : θ.Label × θ.Label =>
         d (θ.label z.1) (θ.label z.2) * θ.weight z.1 z.2)
 
-/-- Symmetrization leaves the linear part of the table score unchanged. -/
+/-- Symmetrization leaves the linear part of the matrix value unchanged. -/
 theorem symmetrize_linear_eq (θ : CouplingTable) (N : θ.Negation) :
     (∑ a, ∑ b,
         d ((θ.symmetrize N).label a) ((θ.symmetrize N).label b) *
@@ -174,7 +173,7 @@ theorem symmetrize_linear_eq (θ : CouplingTable) (N : θ.Negation) :
       simp_rw [← Finset.sum_mul]
     _ = _ := by rw [θ.flipped_linear_eq N]; ring
 
-/-- Scalar AM--GM inequality used for the mirror-sector symmetrization. -/
+/-- The square-root inequality used when symmetrizing the matrix. -/
 theorem sqrt_average_mul_average_ge (R Rm C Cm : ℝ)
     (hR : 0 ≤ R) (hRm : 0 ≤ Rm) (hC : 0 ≤ C) (hCm : 0 ≤ Cm) :
     (Real.sqrt (R * Rm) + Real.sqrt (C * Cm)) / 2 ≤
@@ -201,8 +200,8 @@ theorem sqrt_average_mul_average_ge (R Rm C Cm : ℝ)
   nlinarith [hxyuv,
     sq_nonneg (Real.sqrt (R * C) - Real.sqrt (Cm * Rm))]
 
-/-- The nonlinear part of the symmetrized table dominates the average of
-the Alice and Bob mirror-sector contributions. -/
+/-- The square-root terms after symmetrization bound the average of the
+contributions from Alice and Bob. -/
 theorem mirror_terms_le_symmetrize (θ : CouplingTable) (N : θ.Negation) :
     (∑ c, s (θ.label c) *
         (Real.sqrt (θ.row c * θ.row (N.neg c)) +
@@ -229,15 +228,14 @@ theorem mirror_terms_le_symmetrize (θ : CouplingTable) (N : θ.Negation) :
         (θ.column_nonneg c) (θ.column_nonneg (N.neg c)))
       (Real.sqrt_nonneg _)
 
-/-- The raw two-party spectral bound before table symmetrization. -/
+/-- The spectral-weight bound before symmetrization. -/
 noncomputable def mirrorScore (θ : CouplingTable) (N : θ.Negation) : ℝ :=
   (∑ a, ∑ b, d (θ.label a) (θ.label b) * θ.weight a b) +
     ∑ c, s (θ.label c) *
       (Real.sqrt (θ.row c * θ.row (N.neg c)) +
         Real.sqrt (θ.column c * θ.column (N.neg c))) / 2
 
-/-- The ordinary coupling-table score of the symmetrized table dominates the
-raw mirror-sector score. -/
+/-- The value after symmetrization bounds the expression obtained from the two Cauchy--Schwarz estimates. -/
 theorem mirrorScore_le_symmetrize_score (θ : CouplingTable) (N : θ.Negation) :
     θ.mirrorScore N ≤ (θ.symmetrize N).score := by
   unfold mirrorScore score

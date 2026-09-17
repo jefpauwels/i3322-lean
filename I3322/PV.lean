@@ -5,9 +5,9 @@ import Mathlib.Analysis.Real.Sqrt
 /-!
 # Finite Pal--Vertesi chains
 
-This file is the direct Lean encoding of equations (4)--(7) in the
-manuscript.  Amplitudes are indexed from `0` in Lean, so `amplitude i`
-corresponds to the paper's `lambda_(i+1)`.
+This file is the direct Lean encoding of Equations (4)--(7) of
+arXiv:2608.29734v1.  Coefficients are indexed from `0` in Lean, so
+`amplitude i` corresponds to the paper's `lambda_(i+1)`.
 -/
 
 namespace I3322

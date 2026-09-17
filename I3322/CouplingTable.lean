@@ -1,15 +1,15 @@
 import I3322.PV
 
 /-!
-# Finite coupling tables
+# Finite spectral-weight matrices
 
-This file directly encodes the finite tables and their score from
-equations (20)--(21) of the manuscript.
+This file encodes the finite matrix domain in Lemma 3 and the value in
+Equation (23) of arXiv:2608.29734v1. The marginals are Equation (19).
 -/
 
 namespace I3322
 
-/-- A nonnegative, unit-mass table on a finite set of labels in `[-1,1]`. -/
+/-- A nonnegative matrix of total weight one, indexed by a finite set of labels in `[-1,1]`. -/
 structure CouplingTable where
   Label : Type
   [fintypeLabel : Fintype Label]
@@ -32,7 +32,7 @@ noncomputable def row (θ : CouplingTable) (a : θ.Label) : ℝ :=
 noncomputable def column (θ : CouplingTable) (b : θ.Label) : ℝ :=
   ∑ a, θ.weight a b
 
-/-- The table score `Phi(theta)` from equation (21). -/
+/-- The matrix value `Phi(theta)` from Equation (23). -/
 noncomputable def score (θ : CouplingTable) : ℝ :=
   (∑ a, ∑ b, d (θ.label a) (θ.label b) * θ.weight a b) +
     ∑ c, s (θ.label c) * Real.sqrt (θ.row c * θ.column c)

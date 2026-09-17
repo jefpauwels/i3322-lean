@@ -4,25 +4,19 @@ import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Analysis.SpecialFunctions.Sqrt
 
 /-!
-# One-label stationarity for a two-sided PV chain
+# Varying one spectral label
 
-Changing one label in a bi-infinite PV chain changes only the two adjacent
-diagonal terms and their common junction term.  This file isolates that
-finite-coordinate objective and proves its exact first-order condition.
-
-The maximality hypothesis is stated as an inequality for all
-admissible replacement labels.  It is the interface supplied by finite PV
-truncations: every finitely perturbed truncation is bounded by `betaPV`, and
-the boundary errors vanish for a square-summable chain.  No differentiation
-of an infinite series is used below.
+Lemma 5, Steps 1 and 3: finite truncations give an upper bound after changing
+one label. Letting the truncations grow and differentiating the three
+affected terms gives Equations (40) and (42).
 -/
 
 namespace I3322
 namespace ChainStationarity
 
-/-- The three numerator terms which depend on the label at position `i`.
-The amplitude `amplitude i` belongs to the edge from `label (i-1)` to
-`label i`, matching the indexing in `EqualityChain`. -/
+/-- The three numerator terms that contain the label at position `i`.
+The coefficient `amplitude i` sits between `label (i-1)` and `label i`,
+as in `EqualityChain`. -/
 noncomputable def localLabelObjective
     (label amplitude : ℤ → ℝ) (i : ℤ) (x : ℝ) : ℝ :=
   d (label (i - 1)) x * amplitude i ^ 2 +
@@ -68,7 +62,7 @@ theorem hasDerivAt_d_left (b x : ℝ) :
       (hasDerivAt_const (x := x) (c := b))).div_const 2)).sub_const 1) using 1
   all_goals first | rfl | (norm_num [id_eq, div_eq_mul_inv] <;> ring)
 
-/-- Exact derivative of the finite-coordinate objective. -/
+/-- Exact derivative of the sum of the three affected terms. -/
 theorem hasDerivAt_localLabelObjective
     (label amplitude : ℤ → ℝ) (i : ℤ)
     (hi : label i ∈ Set.Ioo (-1 : ℝ) 1) :
@@ -87,8 +81,7 @@ theorem hasDerivAt_localLabelObjective
   convert (hleft.add hright).add hjunction using 1
   all_goals first | rfl | (norm_num [id_eq, div_eq_mul_inv] <;> ring)
 
-/-- A global bound on admissible one-label replacements makes the current
-interior label a genuine local maximizer on `ℝ`. -/
+/-- The current label is an interior maximizer of the three affected terms. -/
 theorem isLocalMax_localLabelObjective
     (label amplitude : ℤ → ℝ) (i : ℤ)
     (hi : label i ∈ Set.Ioo (-1 : ℝ) 1)
@@ -99,16 +92,7 @@ theorem isLocalMax_localLabelObjective
   filter_upwards [isOpen_Ioo.mem_nhds hi] with x hx
   exact hmax x ⟨le_of_lt hx.1, le_of_lt hx.2⟩
 
-/-- Finite-window bridge.  `windowNumerator N` is the numerator of the
-unperturbed truncation and `windowNormSq N` its squared norm.  The first
-hypothesis says the recurrence and square summability make its deficit from
-`betaPV * windowNormSq N` tend to zero.  The second is exactly the finite PV
-bound after replacing the single label by `x`; the displayed difference is
-the only change in the numerator.
-
-Taking the limit therefore gives genuine nonincrease of the three-term local
-objective.  This lemma keeps all limiting arguments outside the subsequent
-differentiation step. -/
+/-- Lemma 5, Step 1: bounds on finite truncations imply that replacing one label cannot increase the three affected terms. -/
 theorem local_nonincrease_of_finite_windows
     (label amplitude : ℤ → ℝ) (i : ℤ)
     (windowNumerator windowNormSq : ℕ → ℝ)
@@ -136,8 +120,7 @@ theorem local_nonincrease_of_finite_windows
     ge_of_tendsto' hdefect hdelta
   linarith
 
-/-- Undivided label stationarity.  This is the direct finite-coordinate
-first variation before introducing amplitude ratios. -/
+/-- Equation (40), obtained by varying one label. -/
 theorem weighted_stationarity
     (label amplitude : ℤ → ℝ) (i : ℤ)
     (hi : label i ∈ Set.Ioo (-1 : ℝ) 1)
@@ -153,8 +136,7 @@ theorem weighted_stationarity
   rw [hderiv] at hzero
   exact hzero
 
-/-- Stationarity obtained directly from finite PV truncation bounds and a
-vanishing boundary defect. -/
+/-- Equation (40), obtained from finite truncations as in Lemma 5. -/
 theorem weighted_stationarity_of_finite_windows
     (label amplitude : ℤ → ℝ) (i : ℤ)
     (hi : label i ∈ Set.Ioo (-1 : ℝ) 1)
@@ -204,10 +186,8 @@ theorem label_stationarity
   rw [hform, hweighted]
   simp
 
-/-- Ratio-form stationarity directly from finite-window PV bounds.  This is
-the complete reusable truncation-to-recurrence interface: upstream code only
-has to identify its finite numerators and prove that their boundary deficit
-tends to zero. -/
+/-- Equation (42), obtained from the bounds on finite truncations in
+Lemma 5, Step 1. -/
 theorem label_stationarity_of_finite_windows
     (label amplitude : ℤ → ℝ) (i : ℤ)
     (hi : label i ∈ Set.Ioo (-1 : ℝ) 1)

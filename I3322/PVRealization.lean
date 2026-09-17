@@ -8,11 +8,9 @@ import Mathlib.Tactic.Ring
 /-!
 # Finite-dimensional realization of every PV chain
 
-This file implements the block projectors displayed in the manuscript and
-evaluates their Born-rule `I3322` score.  To avoid a parity split, a
-chain with `n` amplitudes is padded by zero amplitudes to dimension `2*n+1`.
-The first `n` coordinates are unchanged, so the padding does not change the PV
-numerator or norm.
+Section II B: the block projectors realize the value in Equation (5).
+A chain with `n` coefficients is padded by zeros to dimension `2*n+1`;
+this leaves the numerator and squared norm unchanged.
 -/
 
 namespace I3322
@@ -126,7 +124,7 @@ theorem blockDiagonal_idempotent {m : ℕ}
       simp [hik, hkj]
     · simp [hik]
 
-/-- Block-diagonal orthogonal projection. -/
+/-- Block-diagonal projector. -/
 noncomputable def blockDiagonalProjection {m : ℕ}
     (P : Fin m → OrthogonalProjection 2) :
     OrthogonalProjection (m * 2) := by
@@ -170,7 +168,7 @@ noncomputable def reindexProjection {m n : ℕ} (e : Fin m ≃ Fin n)
     rw [← e.sum_comp]
     simpa [Matrix.mul_apply] using congrFun (congrFun P.idempotent i) j
 
-/-- Orthogonal direct sum of two projections. -/
+/-- Direct sum of two projections. -/
 noncomputable def sumProjection {m n : ℕ}
     (P : OrthogonalProjection m) (Q : OrthogonalProjection n) :
     OrthogonalProjection (m + n) := by
@@ -195,21 +193,21 @@ noncomputable def sumProjection {m n : ℕ}
       simp [D, Matrix.fromBlocks_multiply, P.idempotent, Q.idempotent]
     simpa [Matrix.mul_apply] using congrFun (congrFun hD i) j
 
-/-- The projector `P_σ(c)` as a packaged operator. -/
+/-- The projector `P_σ(c)` as an operator. -/
 noncomputable def pProjection (σ c : ℝ) (hσ : σ ^ 2 = 1)
     (hc : c ∈ Set.Icc (-1 : ℝ) 1) : OrthogonalProjection 2 where
   matrix := pBlock σ c
   hermitian := block_hermitian _ _ _
   idempotent := pBlock_idempotent hσ hc
 
-/-- The projector `Q_σ(c)` as a packaged operator. -/
+/-- The projector `Q_σ(c)` as an operator. -/
 noncomputable def qProjection (σ c : ℝ) (hσ : σ ^ 2 = 1)
     (hc : c ∈ Set.Icc (-1 : ℝ) 1) : OrthogonalProjection 2 where
   matrix := qBlock σ c
   hermitian := block_hermitian _ _ _
   idempotent := qBlock_idempotent hσ hc
 
-/-- The packaged fixed rank-one projector `Π₊`. -/
+/-- The fixed rank-one projector `Π₊`. -/
 noncomputable def piPlusProjection : OrthogonalProjection 2 where
   matrix := piPlus
   hermitian := block_hermitian _ _ _
@@ -225,7 +223,7 @@ theorem pvDim_pos (p : PVChain) : 0 < pvDim p := by
 noncomputable def paddedLabel (p : PVChain) (i : ℕ) : ℝ :=
   if i ≤ p.n then p.label i else -1
 
-/-- The amplitude sequence padded on the right by zeros. -/
+/-- The coefficient sequence padded on the right by zeros. -/
 noncomputable def paddedAmplitude (p : PVChain) (i : ℕ) : ℝ :=
   if i < p.n then p.amplitude i else 0
 
@@ -273,7 +271,7 @@ def bobFullEquiv (p : PVChain) :
   ((Equiv.sumCongr finProdFinEquiv (Equiv.refl _)).trans finSumFinEquiv).trans
     (bobEquiv p)
 
-/-- Package a Hermitian idempotent matrix after a finite basis reindexing. -/
+/-- Express a projector after changing the basis indices. -/
 noncomputable def projectionFromEquiv {ι : Type} [Fintype ι] [DecidableEq ι]
     {n : ℕ} (e : ι ≃ Fin n) (M : Matrix ι ι ℂ)
     (hH : M.conjTranspose = M) (hI : M * M = M) :
@@ -514,13 +512,13 @@ theorem diagonalKernel_eq (p : PVChain) (i : Fin (pvDim p)) :
     split_ifs <;> try omega
     simp [d]
 
-/-- Off-diagonal kernel on Alice's complementary (even-label) pairs. -/
+/-- The off-diagonal contribution on Alice's complementary pairs. -/
 noncomputable def evenKernel (p : PVChain) (i k : Fin (pvDim p)) : ℂ :=
   ((aliceEffect p 1 one_sq).matrix i k
       -(aliceEffect p (-1) neg_one_sq).matrix i k) *
     (bobThird p).matrix i k
 
-/-- Off-diagonal kernel on Bob's complementary (odd-label) pairs. -/
+/-- The off-diagonal contribution on Bob's complementary pairs. -/
 noncomputable def oddKernel (p : PVChain) (i k : Fin (pvDim p)) : ℂ :=
   (aliceThird p).matrix i k *
     ((bobEffect p 1 one_sq).matrix i k
@@ -609,7 +607,7 @@ theorem pvState_normSq (p : PVChain) :
   simp_rw [hrow]
   exact paddedAmplitude_normSq p
 
-/-- The explicit PV data in canonical Schmidt form. -/
+/-- The PV state and measurements in the Schmidt basis. -/
 noncomputable def schmidtStrategy (p : PVChain) : SchmidtStrategy where
   dim := pvDim p
   dim_pos := pvDim_pos p
@@ -659,7 +657,7 @@ noncomputable def strategy (p : PVChain) : QuantumStrategy :=
     (strategy p).bob 2 = bobThird p := by
   simp [strategy, schmidtStrategy, SchmidtStrategy.toQuantumStrategy]
 
-/-- Born contraction for a real Schmidt-diagonal state. -/
+/-- Expectation numerator for a real Schmidt-diagonal state. -/
 theorem schmidt_bornNumerator (S : SchmidtStrategy)
     (A B : Matrix (Fin S.dim) (Fin S.dim) ℂ) :
     S.toQuantumStrategy.bornNumerator A B =
@@ -964,7 +962,7 @@ theorem strategy_stateNormSq (p : PVChain) :
   rw [SchmidtStrategy.state_normSq]
   exact paddedAmplitude_normSq p
 
-/-- The full neighbor sum before separating its even and odd edges. -/
+/-- The full neighbor sum before separating even and odd positions. -/
 noncomputable def neighborFull (p : PVChain) : ℝ :=
   ∑ r : Fin (p.n * 2),
     s (paddedLabel p (r.val + 1)) * paddedAmplitude p r.val *
@@ -1195,7 +1193,7 @@ theorem strategy_value (p : PVChain) :
   rw [strategy_value_eq_padded, paddedNumerator_eq]
   rfl
 
-/-- Terminal realization theorem in the canonical Schmidt presentation. -/
+/-- The state in the Schmidt basis realizes the value in Equation (5). -/
 theorem schmidtStrategy_value (p : PVChain) :
     (schmidtStrategy p).value = p.value := by
   change (strategy p).value = p.value

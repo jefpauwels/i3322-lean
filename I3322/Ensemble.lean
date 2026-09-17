@@ -2,13 +2,10 @@ import Mathlib.Algebra.BigOperators.Field
 import I3322.CouplingTable
 
 /-!
-# Finite-chain ensembles
+# Finite collections of PV chains
 
-This file formalizes the Markov-walk construction from Appendix D of the
-manuscript.  The matching conditions are stated as identities against an
-arbitrary test function.  This is equivalent to the cell-by-cell form in the
-paper, and makes the induction which appends one edge to every chain quite
-transparent.
+Section IV and Appendix B of arXiv:2608.29734v1. The matching conditions in
+Equations (25)--(26) are stated for arbitrary functions of the labels.
 -/
 
 namespace I3322
@@ -16,12 +13,12 @@ namespace CouplingTable
 
 open scoped BigOperators
 
-/-- An unnormalised open PV chain with `N` amplitudes and `N+1` table labels. -/
+/-- A finite chain with `N` coefficients and unrestricted endpoint labels. -/
 structure OpenChain (θ : CouplingTable) (N : ℕ) where
   label : Fin (N + 1) → θ.Label
   amplitude : Fin N → ℝ
 
-/-- A finite ensemble of open chains. -/
+/-- A finite collection of chains with unrestricted endpoint labels. -/
 structure Ensemble (θ : CouplingTable) (N : ℕ) where
   Index : Type
   [fintypeIndex : Fintype Index]
@@ -39,14 +36,14 @@ def natExtend {α : Type} {n : ℕ} (v : Fin n → α) (fallback : α) (i : ℕ)
     (fallback : α) (i : Fin n) : natExtend v fallback i = v i := by
   simp [natExtend, i.isLt]
 
-/-- The diagonal matching identity, tested against an arbitrary function of a cell. -/
+/-- Equation (25), tested against a function of the two labels. -/
 def DiagonalMatches (θ : CouplingTable) {N : ℕ} (E : Ensemble θ N) : Prop :=
   ∀ i : Fin N, ∀ f : θ.Label → θ.Label → ℝ,
     (∑ γ, f ((E.chain γ).label i.castSucc) ((E.chain γ).label i.succ) *
       (E.chain γ).amplitude i ^ 2) =
       ∑ a, ∑ b, f a b * θ.weight a b
 
-/-- The junction matching identity, tested against an arbitrary function of the shared label. -/
+/-- Equation (26), tested against a function of the shared label. -/
 def JunctionMatches (θ : CouplingTable) {N : ℕ} (E : Ensemble θ N) : Prop :=
   ∀ i : ℕ, ∀ hi : i + 1 < N, ∀ f : θ.Label → ℝ,
     (∑ γ, f ((E.chain γ).label ⟨i + 1, by omega⟩) *
@@ -54,16 +51,16 @@ def JunctionMatches (θ : CouplingTable) {N : ℕ} (E : Ensemble θ N) : Prop :=
         (E.chain γ).amplitude ⟨i + 1, hi⟩)) =
       ∑ c, f c * Real.sqrt (θ.row c * θ.column c)
 
-/-- All amplitudes in an ensemble are nonnegative. -/
+/-- All coefficients in a collection of chains are nonnegative. -/
 def AmplitudesNonnegative (θ : CouplingTable) {N : ℕ} (E : Ensemble θ N) : Prop :=
   ∀ γ i, 0 ≤ (E.chain γ).amplitude i
 
-/-- Squared norm of an open chain. -/
+/-- Squared norm of a finite chain before endpoint padding. -/
 noncomputable def openNormSq {θ : CouplingTable} {N : ℕ}
     (q : OpenChain θ N) : ℝ :=
   ∑ i, q.amplitude i ^ 2
 
-/-- Numerator carried by the table-labelled part of an open chain. -/
+/-- The numerator of Equation (5) before endpoint padding. -/
 noncomputable def openNumerator {θ : CouplingTable} {N : ℕ}
     (q : OpenChain θ N) : ℝ :=
   (∑ i : Fin N,
@@ -73,12 +70,12 @@ noncomputable def openNumerator {θ : CouplingTable} {N : ℕ}
       s (θ.label (q.label ⟨i + 1, by omega⟩)) *
         q.amplitude ⟨i, by omega⟩ * q.amplitude ⟨i + 1, by omega⟩
 
-/-- The labels of an open chain padded by the required endpoints `1` and `-1`. -/
+/-- Add the endpoint labels `1` and `-1`. -/
 noncomputable def paddedLabels {θ : CouplingTable} {N : ℕ}
     (q : OpenChain θ N) : Fin (N + 3) → ℝ :=
   Fin.cons 1 (Fin.snoc (fun i => θ.label (q.label i)) (-1))
 
-/-- The amplitudes of an open chain padded by a zero at each end. -/
+/-- Add a zero coefficient at each end. -/
 noncomputable def paddedAmplitudes {θ : CouplingTable} {N : ℕ}
     (q : OpenChain θ N) : Fin (N + 2) → ℝ :=
   Fin.cons 0 (Fin.snoc q.amplitude 0)
@@ -120,8 +117,7 @@ theorem sum_paddedAmplitudes_sq {θ : CouplingTable} {N : ℕ}
   change paddedLabels q i.castSucc.succ = θ.label (q.label i)
   simp [paddedLabels]
 
-/-- Padding turns every nonzero, nonnegative open chain into a PV chain without
-changing its quotient. -/
+/-- Endpoint padding gives an admissible PV chain with the same value. -/
 noncomputable def openToPV {θ : CouplingTable} {N : ℕ}
     (q : OpenChain θ N) (hamp : ∀ i, 0 ≤ q.amplitude i)
     (hnorm : 0 < openNormSq q) : PVChain where
@@ -255,7 +251,7 @@ theorem openToPV_numerator {θ : CouplingTable} {N : ℕ}
       rw [hdiag, hjunc]
       rfl
 
-/-- The one-edge ensemble: one chain for every table cell. -/
+/-- The collection of chains of length one: one chain for every matrix entry. -/
 noncomputable def one (θ : CouplingTable) : Ensemble θ 1 where
   Index := θ.Label × θ.Label
   chain γ :=
@@ -281,7 +277,7 @@ theorem one_junctionMatches (θ : CouplingTable) : (one θ).JunctionMatches := b
   intro i hi
   omega
 
-/-- Every row-normalized transition has total squared square-root weight one. -/
+/-- The weights divided by their row marginal sum to one. -/
 theorem sum_sq_sqrt_weight_div_row (θ : CouplingTable)
     (hrow : ∀ c, 0 < θ.row c) (c : θ.Label) :
     ∑ b, Real.sqrt (θ.weight c b / θ.row c) ^ 2 = 1 := by
@@ -296,7 +292,7 @@ theorem sum_sq_sqrt_weight_div_row (θ : CouplingTable)
   change θ.row c / θ.row c = 1
   exact div_self (ne_of_gt (hrow c))
 
-/-- Every column-normalized transition has total squared square-root weight one. -/
+/-- The weights divided by their column marginal sum to one. -/
 theorem sum_sq_sqrt_weight_div_column (θ : CouplingTable)
     (hcolumn : ∀ c, 0 < θ.column c) (c : θ.Label) :
     ∑ a, Real.sqrt (θ.weight a c / θ.column c) ^ 2 = 1 := by
@@ -311,7 +307,7 @@ theorem sum_sq_sqrt_weight_div_column (θ : CouplingTable)
   change θ.column c / θ.column c = 1
   exact div_self (ne_of_gt (hcolumn c))
 
-/-- The square-root identity at a newly-created junction. -/
+/-- The square-root identity for two neighboring coefficients. -/
 theorem sqrt_transition_mul (θ : CouplingTable)
     (hrow : ∀ c, 0 < θ.row c) (hcolumn : ∀ c, 0 < θ.column c)
     (c b : θ.Label) :
@@ -326,7 +322,7 @@ theorem sqrt_transition_mul (θ : CouplingTable)
   rw [← Real.sqrt_mul (le_of_lt hr)]
 
 /-- Appending one label to every chain, with the two transition normalizations
-from Appendix D. -/
+from the construction in Section IV and Appendix B. -/
 noncomputable def extend (θ : CouplingTable) {n : ℕ} (E : Ensemble θ (n + 1)) :
     Ensemble θ (n + 2) where
   Index := E.Index × θ.Label
@@ -353,7 +349,7 @@ theorem extend_amplitudesNonnegative (θ : CouplingTable) {n : ℕ}
         (θ.weight ((E.chain γ.1).label (Fin.last (n + 1))) γ.2 /
           θ.row ((E.chain γ.1).label (Fin.last (n + 1)))))
 
-/-- The last squared amplitudes of a matching ensemble have the column
+/-- The last squared coefficients of a matching collection of chains have the column
 marginal as their label distribution. -/
 theorem terminal_moment (θ : CouplingTable) {n : ℕ} (E : Ensemble θ (n + 1))
     (hdiag : E.DiagonalMatches) (g : θ.Label → ℝ) :
@@ -368,8 +364,7 @@ theorem terminal_moment (θ : CouplingTable) {n : ℕ} (E : Ensemble θ (n + 1))
     rw [← Finset.mul_sum]
     rfl)
 
-/-- Appending a normalized step preserves the diagonal cell moments and
-creates the correct moment at the new last position. -/
+/-- Appending one label preserves Equation (25) and establishes it at the new last position. -/
 theorem extend_diagonalMatches (θ : CouplingTable) {n : ℕ}
     (E : Ensemble θ (n + 1)) (hdiag : E.DiagonalMatches)
     (hrow : ∀ c, 0 < θ.row c) (hcolumn : ∀ c, 0 < θ.column c) :
@@ -453,8 +448,7 @@ theorem extend_diagonalMatches (θ : CouplingTable) {n : ℕ}
           ring
       _ = ∑ a, ∑ b, f a b * θ.weight a b := hdiag j f
 
-/-- Appending a normalized step preserves every old junction moment and
-creates the required square-root row/column moment at the new junction. -/
+/-- Appending one label preserves Equation (26) and establishes it at the new last position. -/
 theorem extend_junctionMatches (θ : CouplingTable) {n : ℕ}
     (E : Ensemble θ (n + 1)) (hdiag : E.DiagonalMatches)
     (hjunc : E.JunctionMatches)
@@ -604,7 +598,7 @@ theorem extend_junctionMatches (θ : CouplingTable) {n : ℕ}
         rw [Real.sq_sqrt (le_of_lt hp)]
         ring
 
-/-- The recursively constructed ensemble at every positive length. -/
+/-- The recursively constructed collection of chains at every positive length. -/
 noncomputable def walkEnsemble (θ : CouplingTable) : (N : ℕ) → 0 < N → Ensemble θ N
   | 0, h => (Nat.not_lt_zero _ h).elim
   | 1, _ => one θ

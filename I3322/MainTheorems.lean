@@ -4,21 +4,21 @@ import I3322.OperatorReduction
 import I3322.EqualityExtraction
 
 /-!
-# Assembly of the two main theorems
+# Theorems 1 and 2
 
-This file contains the order-theoretic assembly of the two main theorems using
-`QuantumStrategy` and the definitions `quantumSupremum` and `betaPV`.
+`I3322/Statement.lean` gives the definitions and statements with references
+to arXiv:2608.29734v1. The repository `README.md` gives the correspondence
+between the paper and the Lean declarations.
 
-The first bridge says that every finite-dimensional quantum strategy is
-bounded by a finite coupling table.  The second says that no coupling table
-has score exactly `betaPV`.  Both bridges are proved in imported modules; the
-lemmas below also expose parameterized assembly forms so that the final
-dependency structure remains explicit.
+Lemma 2 bounds every quantum value by a finite spectral-weight matrix;
+Lemma 3 bounds its value by `betaPV`; Lemmas 4--5 exclude equality.
+The final theorems supply the intermediate hypotheses, including
+`tableBound`, with proved results.
 -/
 
 namespace I3322
 
-/-- The sharp table reduction bounds every raw quantum value by `betaPV`. -/
+/-- The spectral-weight bound implies that every quantum value is at most `betaPV`. -/
 theorem quantumValue_le_betaPV_of_tableBound
     (tableBound : ∀ S : QuantumStrategy,
       ∃ θ : CouplingTable, S.value ≤ θ.score)
@@ -27,8 +27,7 @@ theorem quantumValue_le_betaPV_of_tableBound
   obtain ⟨θ, hSθ⟩ := tableBound S
   exact hSθ.trans (CouplingTable.Ensemble.score_le_betaPV θ)
 
-/-- The sharp table reduction gives the upper inequality between the two
-concrete suprema. -/
+/-- The spectral-weight bound implies the upper inequality between the suprema. -/
 theorem quantumSupremum_le_betaPV_of_tableBound
     (tableBound : ∀ S : QuantumStrategy,
       ∃ θ : CouplingTable, S.value ≤ θ.score) :
@@ -38,9 +37,7 @@ theorem quantumSupremum_le_betaPV_of_tableBound
   exact quantumValue_le_betaPV_of_tableBound tableBound S
 
 /--
-**Theorem 1, assembly form.**  A sharp table reduction, together with the
-already formalized explicit realization of every finite PV chain, identifies
-the finite-dimensional quantum supremum with `betaPV`.
+**Theorem 1 with the spectral-weight bound as an explicit hypothesis.**
 -/
 theorem quantumSupremum_eq_betaPV_of_tableBound
     (tableBound : ∀ S : QuantumStrategy,
@@ -61,8 +58,7 @@ theorem quantumSupremum_eq_betaPV : quantumSupremum = betaPV :=
 theorem variational : quantumSupremum = betaPV :=
   quantumSupremum_eq_betaPV
 
-/-- A hypothetical maximizing strategy forces equality in one of the coupling
-tables supplied by the sharp operator reduction. -/
+/-- A hypothetical maximizing strategy forces equality for a matrix supplied by Lemma 2. -/
 theorem equalityTable_of_quantumMaximizer_of_tableBound
     (tableBound : ∀ S : QuantumStrategy,
       ∃ θ : CouplingTable, S.value ≤ θ.score)
@@ -77,14 +73,13 @@ theorem equalityTable_of_quantumMaximizer_of_tableBound
     _ = S.value := hS.symm
     _ ≤ θ.score := hSθ
 
-/-! The second bridge is a direct proposition rather than a structure field. -/
+/-! Nonattainment follows from the two proved bounds. -/
 
 /--
-**Theorem 2, assembly form.**  The sharp table reduction and table-level
-strictness imply that no finite-dimensional strategy attains the
-quantum supremum.
+**Theorem 2 with the spectral-weight bound and exclusion of equality as
+explicit hypotheses.**
 -/
-theorem finiteDimensional_nonattainment_of_bridges
+theorem finiteDimensional_nonattainment_of_tableBound
     (tableBound : ∀ S : QuantumStrategy,
       ∃ θ : CouplingTable, S.value ≤ θ.score)
     (score_ne_betaPV : ∀ θ : CouplingTable, θ.score ≠ betaPV) :
@@ -96,11 +91,11 @@ theorem finiteDimensional_nonattainment_of_bridges
 
 /--
 **Theorem 2 (finite-dimensional nonattainment).** No
-finite-dimensional pure-projective strategy attains `quantumSupremum`.
+finite-dimensional pure-state/projective strategy attains `quantumSupremum`.
 -/
 theorem finiteDimensional_nonattainment :
     ∀ S : QuantumStrategy, S.value ≠ quantumSupremum :=
-  finiteDimensional_nonattainment_of_bridges
+  finiteDimensional_nonattainment_of_tableBound
     QuantumStrategy.tableBound CouplingTable.score_ne_betaPV
 
 end I3322

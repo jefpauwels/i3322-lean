@@ -3,11 +3,11 @@ import I3322.PVSupremum
 import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
-# From coupling tables to finite PV chains
+# From spectral weights to finite PV chains
 
-This file sums the matching identities of `I3322.Ensemble`, applies the PV
-supremum to every nonzero member of the ensemble, and removes the one missing
-junction by sending the chain length to infinity.
+The matching identities give the finite-chain bound in Equation (29).
+Letting the chain length grow proves Lemma 3, Equation (27), of
+arXiv:2608.29734v1.
 -/
 
 namespace I3322
@@ -15,15 +15,15 @@ namespace CouplingTable
 
 open scoped BigOperators
 
-/-- The cell (diagonal) part of the table score. -/
+/-- The entry (diagonal) part of the matrix value. -/
 noncomputable def diagonalPart (θ : CouplingTable) : ℝ :=
   ∑ a, ∑ b, d (θ.label a) (θ.label b) * θ.weight a b
 
-/-- The row/column square-root part of the table score. -/
+/-- The row/column square-root part of the matrix value. -/
 noncomputable def junctionPart (θ : CouplingTable) : ℝ :=
   ∑ c, s (θ.label c) * Real.sqrt (θ.row c * θ.column c)
 
-/-- The length-`N` ensemble quotient from equation (26). -/
+/-- The value `Phi_N` from Section IV, used in Equation (29). -/
 noncomputable def finiteScore (θ : CouplingTable) (N : ℕ) : ℝ :=
   θ.diagonalPart + (((N - 1 : ℕ) : ℝ) / (N : ℝ)) * θ.junctionPart
 
@@ -41,7 +41,7 @@ theorem label_nonempty (θ : CouplingTable) : Nonempty θ.Label := by
   haveI : IsEmpty θ.Label := not_nonempty_iff.mp h
   simpa using θ.totalWeight
 
-/-- The uniform probability mass on one cell of the table's label set. -/
+/-- The weight `1/|X|²` of one entry of the uniform matrix `μ` on the label set `X`. -/
 noncomputable def uniformWeight (θ : CouplingTable) : ℝ :=
   1 / (Fintype.card θ.Label : ℝ) ^ 2
 
@@ -50,7 +50,7 @@ theorem uniformWeight_pos (θ : CouplingTable) : 0 < θ.uniformWeight := by
   unfold uniformWeight
   positivity
 
-/-- Mix a coupling table with the uniform table on the same labels. -/
+/-- Mix a spectral-weight matrix with the uniform matrix on the same labels. -/
 noncomputable def regularize (θ : CouplingTable) (ε : ℝ)
     (hε0 : 0 ≤ ε) (hε1 : ε ≤ 1) : CouplingTable where
   Label := θ.Label
@@ -256,9 +256,9 @@ theorem score_le_betaPV_of_positive (θ : CouplingTable)
   rw [hform] at hfinite
   linarith
 
-/-- Lemma 4 of the manuscript: every finite coupling table is bounded by the
-PV supremum.  Vanishing marginals are removed by uniform regularization; only
-the table scores, not any infinite chain, pass to the limit. -/
+/-- Lemma 3 of the paper: every finite spectral-weight matrix is bounded by the
+PV supremum.  If some marginal vanishes, `θ` is replaced by `(1-ε)θ + εμ` with `μ`
+the uniform matrix, and continuity of `Φ` as `ε ↓ 0` gives the result. -/
 theorem score_le_betaPV (θ : CouplingTable) : θ.score ≤ betaPV := by
   classical
   letI := θ.label_nonempty

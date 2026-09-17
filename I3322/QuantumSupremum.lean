@@ -21,8 +21,7 @@ namespace QuantumSupremumAux
 
 open scoped BigOperators ComplexOrder
 
-/-- The complement of a binary projection, used only for the elementary
-probability bound needed to make the raw quantum supremum well-defined. -/
+/-- The complementary projector, used to bound probabilities between zero and one. -/
 def complementProjection {n : ℕ} (P : OrthogonalProjection n) :
     OrthogonalProjection n where
   matrix := 1 - P.matrix
@@ -40,7 +39,7 @@ def complementProjection {n : ℕ} (P : OrthogonalProjection n) :
     (P : OrthogonalProjection n) :
     (complementProjection P).matrix = 1 - P.matrix := rfl
 
-/-- A Hermitian idempotent matrix is positive semidefinite. -/
+/-- A Hermitian matrix satisfying `P * P = P` is positive. -/
 theorem projection_posSemidef {n : ℕ} (P : OrthogonalProjection n) :
     P.matrix.PosSemidef := by
   have h := Matrix.posSemidef_conjTranspose_mul_self P.matrix

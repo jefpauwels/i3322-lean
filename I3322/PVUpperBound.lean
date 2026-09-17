@@ -7,10 +7,10 @@ import Mathlib.Tactic.Positivity
 import Mathlib.Tactic.Ring
 
 /-!
-# Analytic upper bound for a PV cell
+# The upper bound in Appendix C
 
-This is the pointwise inequality used in Appendix E to prove
-`betaPV < 1/3`.
+This is the pointwise inequality used in Appendix C of arXiv:2608.29734v1
+to prove the upper bound `betaPV < 1/3` in Equation (30).
 -/
 
 namespace I3322

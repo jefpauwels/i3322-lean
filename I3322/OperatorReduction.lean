@@ -14,31 +14,25 @@ import QuantumInfo.ForMathlib.MatrixNorm.TraceNorm
 import QuantumInfo.ForMathlib.HermitianMat.Schatten
 
 /-!
-# Operator reduction for `I3322`
+# From quantum strategies to spectral weights
 
-This file proves the operator-to-coupling-table reduction for
-`I3322.QuantumStrategy`.
-
-The first layer is completely basis-free: projections are converted to
-reflections, the two elementary reflection relations are proved, Born
-expectation is proved linear in both operators, and the probability form of
-`I3322` is converted exactly to equation (13) of the manuscript.
+Equation (12) of arXiv:2608.29734v1 expresses the Bell value in terms of
+dichotomic observables. Separate spectral decompositions and Cauchy--Schwarz, followed
+by symmetrization of the spectral-weight matrix, prove Lemma 2.
 -/
 
 namespace Matrix
 
 variable {n : Type*} [Fintype n] [DecidableEq n]
 
-/-- Physlib's Schatten `1`-norm agrees with its trace norm. -/
+/-- The norm with parameter `1` equals the trace norm. -/
 theorem schattenNorm_one_eq_traceNorm (A : Matrix n n ℂ) :
     schattenNorm A 1 = A.traceNorm := by
   rw [schattenNorm_eq_sum_singularValues_rpow A (by positivity : (0 : ℝ) < 1),
     traceNorm_eq_sum_singularValues]
   norm_num
 
-/-- The square of the Schatten `2`-norm is the Hilbert--Schmidt quadratic
-form.  Stating this bridge explicitly keeps the only analytic inequality in
-the table reduction tied to the concrete matrix entries. -/
+/-- The square of the norm with parameter `2` equals `Re Tr(A* A)`. -/
 theorem schattenNorm_two_rpow_eq_re_trace (A : Matrix n n ℂ) :
     schattenNorm A 2 ^ (2 : ℝ) = Complex.re ((A.conjTranspose * A).trace) := by
   let hH := Matrix.isHermitian_mul_conjTranspose_self A.conjTranspose
@@ -54,8 +48,7 @@ theorem schattenNorm_two_rpow_eq_re_trace (A : Matrix n n ℂ) :
     _ = Complex.re ((A.conjTranspose * A).trace) := by
       simpa using congrArg Complex.re hH.trace_eq_sum_eigenvalues.symm
 
-/-- Schatten--Hölder at `(1,2,2)`, in the trace/Hilbert--Schmidt form
-used in the manuscript. -/
+/-- The trace-norm inequality used in Equation (22). -/
 theorem traceNorm_mul_le_schatten_two (A B : Matrix n n ℂ) :
     (A * B).traceNorm ≤ schattenNorm A 2 * schattenNorm B 2 := by
   rw [← schattenNorm_one_eq_traceNorm]
@@ -67,9 +60,7 @@ namespace I3322
 
 open scoped BigOperators ComplexOrder
 
-/-- Finite-sum algebra behind the coefficient
-`d(a,b) = ab + (a-b)/2 - 1`.  Keeping it generic avoids any dependence
-on the particular spectral-label representation. -/
+/-- Finite-sum expansion using the coefficient `d` from Equation (4). -/
 theorem sum_sum_d_algebra {A B : Type*} [Fintype A] [Fintype B]
     (x : A → ℝ) (y : B → ℝ) (w : A → B → ℝ) :
     (∑ a, ∑ b, d (x a) (y b) * w a b) =
@@ -107,7 +98,7 @@ theorem sum_sum_d_algebra {A B : Type*} [Fintype A] [Fintype B]
 
 namespace OrthogonalProjection
 
-/-- The two-outcome reflection corresponding to an outcome-`1` projection. -/
+/-- The dichotomic observable corresponding to an outcome-`1` projection. -/
 def reflection {n : ℕ} (P : OrthogonalProjection n) :
     Matrix (Fin n) (Fin n) ℂ :=
   2 • P.matrix - 1
@@ -154,7 +145,7 @@ end OrthogonalProjection
 namespace QuantumStrategy
 
 /-- The coefficient matrix regarded as the state vector on the product
-index.  This is only a change of presentation; no normal-form hypothesis is
+index.  This is only a change of presentation; no additional hypothesis is
 introduced. -/
 def stateVector (S : QuantumStrategy) :
     (Fin S.dimA × Fin S.dimB) → ℂ :=
@@ -167,9 +158,8 @@ def tensorOperator (S : QuantumStrategy)
     Matrix (Fin S.dimA × Fin S.dimB) (Fin S.dimA × Fin S.dimB) ℂ :=
   A.kronecker B
 
-/-- The four-index Born contraction is the ordinary quadratic form of the
-Kronecker-product observable.  This bridge allows the standard Hilbert-space
-Cauchy--Schwarz inequality to be applied to the strategy model. -/
+/-- Write the expectation numerator as a finite sum on the product basis,
+so that Cauchy--Schwarz applies. -/
 theorem bornNumerator_eq_dotProduct (S : QuantumStrategy)
     (A : Matrix (Fin S.dimA) (Fin S.dimA) ℂ)
     (B : Matrix (Fin S.dimB) (Fin S.dimB) ℂ) :
@@ -378,12 +368,12 @@ theorem bornNumerator_one_one (S : QuantumStrategy) :
   rw [expectation, bornNumerator_one_one]
   simp [S.stateNormSq_ne_zero]
 
-/-- Alice's three reflections. -/
+/-- Alice's three dichotomic observables. -/
 def aliceReflection (S : QuantumStrategy) (x : Fin 3) :
     Matrix (Fin S.dimA) (Fin S.dimA) ℂ :=
   (S.alice x).reflection
 
-/-- Bob's three reflections. -/
+/-- Bob's three dichotomic observables. -/
 def bobReflection (S : QuantumStrategy) (y : Fin 3) :
     Matrix (Fin S.dimB) (Fin S.dimB) ℂ :=
   (S.bob y).reflection
@@ -427,8 +417,7 @@ theorem r_hermitian (S : QuantumStrategy) : S.r.IsHermitian := by
   congr 1 <;> ext i j <;>
     simp [Matrix.conjTranspose_apply, Matrix.one_apply, eq_comm]
 
-/-- Eigenvalues of `p`, in the orthonormal eigenbasis chosen by mathlib's
-finite-dimensional Hermitian spectral theorem. -/
+/-- The eigenvalues of `p`. -/
 noncomputable def pEigenvalue (S : QuantumStrategy) : Fin S.dimA → ℝ :=
   S.p_hermitian.eigenvalues
 
@@ -447,9 +436,7 @@ theorem p_mulVec_eigenvector (S : QuantumStrategy) (j : Fin S.dimA) :
       (S.pEigenvalue j) • ⇑(S.p_hermitian.eigenvectorBasis j) :=
   S.p_hermitian.mulVec_eigenvectorBasis j
 
-/-- The anticommutation relation sends the `p`-eigenspace at `μ` through
-`r` into the eigenspace at `-μ`.  This is the algebraic core of the mirror
-sector relation `r E_c = E_{-c} r`. -/
+/-- The relation `pr + rp = 0` sends the eigenspace at `μ` to that at `-μ`. -/
 theorem p_mulVec_r_eigenvector (S : QuantumStrategy) (j : Fin S.dimA) :
     Matrix.mulVec S.p
         (Matrix.mulVec S.r ⇑(S.p_hermitian.eigenvectorBasis j)) =
@@ -539,14 +526,14 @@ theorem pEigenlabel_mem (S : QuantumStrategy) (j : Fin S.dimA) :
   constructor <;> unfold pEigenlabel <;> nlinarith [sq_nonneg (S.pEigenvalue j - 2),
     sq_nonneg (S.pEigenvalue j + 2)]
 
-/-- The finite label set extracted from `p`, closed under reflection
-`c ↦ -c` as required by the coupling-table construction. -/
+/-- The finite label set extracted from `p`, closed under
+`c ↦ -c` as required by the spectral-weight matrix construction. -/
 noncomputable def pLabelFinset (S : QuantumStrategy) : Finset ℝ :=
   Finset.univ.image S.pEigenlabel ∪
     Finset.univ.image (fun j => -S.pEigenlabel j)
 
-/-- Distinct scalar labels, rather than eigenvector indices; repeated
-eigenvalues are therefore aggregated into one sector. -/
+/-- The distinct eigenvalue labels of `p`; a repeated eigenvalue gives one label
+and one eigenspace. -/
 def PLabel (S : QuantumStrategy) := {c : ℝ // c ∈ S.pLabelFinset}
 
 noncomputable instance (S : QuantumStrategy) : Fintype S.PLabel :=
@@ -730,7 +717,7 @@ theorem spectralLabel_neg_mem (S : QuantumStrategy) (c : S.SpectralLabel) :
       rw [← hj]
       simp [spectralLabelFinset]
 
-/-- Negation as an involutive permutation of the common label set. -/
+/-- The map `c ↦ -c` on the common label set. -/
 noncomputable def SpectralLabel.neg (S : QuantumStrategy) :
     S.SpectralLabel → S.SpectralLabel :=
   fun c ↦ ⟨-c.1, S.spectralLabel_neg_mem c⟩
@@ -766,7 +753,7 @@ theorem SpectralLabel.value_mem (S : QuantumStrategy) (c : S.SpectralLabel) :
       have hm := S.qEigenlabel_mem j
       constructor <;> simp only [SpectralLabel.value, hj] <;> linarith [hm.1, hm.2]
 
-/-- Diagonal mask selecting Alice eigenvectors with scalar label `c`. -/
+/-- Select the eigenvectors of `p` with label `c`. -/
 noncomputable def aliceEigenMask (S : QuantumStrategy) (c : S.SpectralLabel) :
     Matrix (Fin S.dimA) (Fin S.dimA) ℂ :=
   Matrix.diagonal fun i ↦ if S.pEigenlabel i = c.1 then 1 else 0
@@ -777,7 +764,7 @@ noncomputable def aliceSector (S : QuantumStrategy) (c : S.SpectralLabel) :
   S.pEigenvectorUnitary.val * S.aliceEigenMask c *
     S.pEigenvectorUnitary.val.conjTranspose
 
-/-- Diagonal mask selecting Bob eigenvectors with scalar label `c`. -/
+/-- Select the eigenvectors of `q` with label `c`. -/
 noncomputable def bobEigenMask (S : QuantumStrategy) (c : S.SpectralLabel) :
     Matrix (Fin S.dimB) (Fin S.dimB) ℂ :=
   Matrix.diagonal fun j ↦ if S.qEigenlabel j = c.1 then 1 else 0
@@ -1268,7 +1255,7 @@ theorem bob_off_mirror_block_eq_zero (S : QuantumStrategy)
       _ = 0 := hentry
   exact (mul_eq_zero.mp hzero).resolve_left hcoef
 
-/-- The `r` block emitted from sector `c` lies entirely in sector `-c`. -/
+/-- `r` maps the `c`-eigenspace of `p` into the `(-c)`-eigenspace, Equation (16). -/
 theorem alice_mirror_sector (S : QuantumStrategy) (c : S.SpectralLabel) :
     S.aliceSector (SpectralLabel.neg S c) * S.r * S.aliceSector c =
       S.r * S.aliceSector c := by
@@ -1292,7 +1279,7 @@ theorem alice_mirror_sector (S : QuantumStrategy) (c : S.SpectralLabel) :
         exact S.alice_off_mirror_block_eq_zero c d hd
       · simp
 
-/-- The `tau` block emitted from sector `c` lies entirely in sector `-c`. -/
+/-- The same for Bob's difference `tau` and the eigenspaces of `q`. -/
 theorem bob_mirror_sector (S : QuantumStrategy) (c : S.SpectralLabel) :
     S.bobSector (SpectralLabel.neg S c) * S.tau * S.bobSector c =
       S.tau * S.bobSector c := by
@@ -1439,8 +1426,7 @@ theorem bob_block_gram (S : QuantumStrategy) (c : S.SpectralLabel) :
     _ = (((4 * s c.1 ^ 2 : ℝ) : ℂ) • S.bobSector c) := by
       rw [Matrix.mul_smul, S.bobSector_idempotent]
 
-/-- A product-space Born cross term is the dot product of the two locally
-filtered state vectors. -/
+/-- Express the expectation numerator as a finite sum of products of state coefficients. -/
 theorem bornNumerator_cross_eq_dotProduct (S : QuantumStrategy)
     (A C : Matrix (Fin S.dimA) (Fin S.dimA) ℂ)
     (B D : Matrix (Fin S.dimB) (Fin S.dimB) ℂ) :
@@ -1467,8 +1453,7 @@ theorem bornNumerator_cross_eq_dotProduct (S : QuantumStrategy)
       unfold tensorOperator Matrix.kronecker
       rw [Matrix.conjTranspose_kronecker, ← Matrix.mul_kronecker_mul]
 
-/-- Finite-dimensional Cauchy--Schwarz for arbitrary local filters, stated
-in terms of the Born contraction. -/
+/-- Cauchy--Schwarz for the expectation numerator after applying local operators. -/
 theorem bornNumerator_cross_re_le (S : QuantumStrategy)
     (A C : Matrix (Fin S.dimA) (Fin S.dimA) ℂ)
     (B D : Matrix (Fin S.dimB) (Fin S.dimB) ℂ) :
@@ -1494,7 +1479,7 @@ theorem bornNumerator_re_eq_expectation_mul_norm (S : QuantumStrategy)
   unfold expectation
   field_simp [S.stateNormSq_ne_zero]
 
-/-- Cauchy--Schwarz after division by the strictly positive state norm. -/
+/-- Cauchy--Schwarz after division by the positive squared norm of the state. -/
 theorem expectation_cross_le (S : QuantumStrategy)
     (A C : Matrix (Fin S.dimA) (Fin S.dimA) ℂ)
     (B D : Matrix (Fin S.dimB) (Fin S.dimB) ℂ) :
@@ -1560,8 +1545,7 @@ theorem bobReflection_sq (S : QuantumStrategy) (y : Fin 3) :
     S.bobReflection y * S.bobReflection y = 1 := by
   exact (S.bob y).reflection_sq
 
-/-- One Alice mirror block is bounded by the geometric mean of its two row
-masses. -/
+/-- Cauchy--Schwarz bounds the contribution from Alice's paired spectral subspaces. -/
 theorem alice_block_expectation_le_aux (S : QuantumStrategy)
     (c : S.SpectralLabel) :
     S.expectation (S.r * S.aliceSector c) (S.bobReflection 2) ≤
@@ -1612,8 +1596,7 @@ theorem alice_block_expectation_le_aux (S : QuantumStrategy)
   rw [hsqrt] at h
   simpa [cm] using h
 
-/-- One Bob mirror block is bounded by the geometric mean of its two column
-masses. -/
+/-- Cauchy--Schwarz bounds the contribution from Bob's paired spectral subspaces. -/
 theorem bob_block_expectation_le_aux (S : QuantumStrategy)
     (c : S.SpectralLabel) :
     S.expectation (S.aliceReflection 2) (S.tau * S.bobSector c) ≤
@@ -1663,8 +1646,8 @@ theorem bob_block_expectation_le_aux (S : QuantumStrategy)
   rw [hsqrt] at h
   simpa [cm] using h
 
-/-- The unsymmetrized joint spectral weight of the `p`-sector `c` and
-the `q`-sector `c'`. -/
+/-- The joint spectral weight of the `p`-eigenvalue `2c` and the `q`-eigenvalue
+`2c'`, as in Equation (17), before symmetrization. -/
 noncomputable def rawSpectralWeight (S : QuantumStrategy)
     (c c' : S.SpectralLabel) : ℝ :=
   S.expectation (S.aliceSector c) (S.bobSector c')
@@ -1721,8 +1704,7 @@ theorem rawSpectralTable_column (S : QuantumStrategy) (c : S.SpectralLabel) :
     S.rawSpectralTable.column c = S.expectation 1 (S.bobSector c) := by
   exact S.sum_rawSpectralWeight_left c
 
-/-- The operator Cauchy--Schwarz bound for one Alice mirror block, expressed
-in terms of the row masses of the raw spectral table. -/
+/-- Cauchy--Schwarz bounds Alice's paired spectral subspaces in terms of row marginals. -/
 theorem alice_block_expectation_le (S : QuantumStrategy)
     (c : S.SpectralLabel) :
     S.expectation (S.r * S.aliceSector c) (S.bobReflection 2) ≤
@@ -1732,8 +1714,7 @@ theorem alice_block_expectation_le (S : QuantumStrategy)
   rw [S.rawSpectralTable_row, S.rawSpectralTable_row]
   exact S.alice_block_expectation_le_aux c
 
-/-- The operator Cauchy--Schwarz bound for one Bob mirror block, expressed
-in terms of the column masses of the raw spectral table. -/
+/-- Cauchy--Schwarz bounds Bob's paired spectral subspaces in terms of column marginals. -/
 theorem bob_block_expectation_le (S : QuantumStrategy)
     (c : S.SpectralLabel) :
     S.expectation (S.aliceReflection 2) (S.tau * S.bobSector c) ≤
@@ -1743,8 +1724,7 @@ theorem bob_block_expectation_le (S : QuantumStrategy)
   rw [S.rawSpectralTable_column, S.rawSpectralTable_column]
   exact S.bob_block_expectation_le_aux c
 
-/-- Decomposition of the Alice anticommuting component into spectral
-source blocks. -/
+/-- Decompose `r` using Alice's spectral projectors. -/
 theorem r_eq_sum_mul_aliceSector (S : QuantumStrategy) :
     S.r = ∑ c : S.SpectralLabel, S.r * S.aliceSector c := by
   calc
@@ -1754,8 +1734,7 @@ theorem r_eq_sum_mul_aliceSector (S : QuantumStrategy) :
     _ = ∑ c : S.SpectralLabel, S.r * S.aliceSector c := by
       rw [Finset.mul_sum]
 
-/-- Decomposition of the Bob anticommuting component into spectral source
-blocks. -/
+/-- Decompose `tau` using Bob's spectral projectors. -/
 theorem tau_eq_sum_mul_bobSector (S : QuantumStrategy) :
     S.tau = ∑ c : S.SpectralLabel, S.tau * S.bobSector c := by
   calc
@@ -1765,8 +1744,7 @@ theorem tau_eq_sum_mul_bobSector (S : QuantumStrategy) :
     _ = ∑ c : S.SpectralLabel, S.tau * S.bobSector c := by
       rw [Finset.mul_sum]
 
-/-- The whole Alice third-setting term is bounded by the sum of its mirror
-sector geometric means. -/
+/-- Sum the Cauchy--Schwarz bounds for Alice's third measurement. -/
 theorem alice_third_term_le (S : QuantumStrategy) :
     S.expectation S.r (S.bobReflection 2) ≤
       2 * ∑ c : S.SpectralLabel, s c.1 * Real.sqrt
@@ -1790,8 +1768,7 @@ theorem alice_third_term_le (S : QuantumStrategy) :
       intro c _
       ring
 
-/-- The whole Bob third-setting term is bounded by the sum of its mirror
-sector geometric means. -/
+/-- Sum the Cauchy--Schwarz bounds for Bob's third measurement. -/
 theorem bob_third_term_le (S : QuantumStrategy) :
     S.expectation (S.aliceReflection 2) S.tau ≤
       2 * ∑ c : S.SpectralLabel, s c.1 * Real.sqrt
@@ -1815,7 +1792,7 @@ theorem bob_third_term_le (S : QuantumStrategy) :
       intro c _
       ring
 
-/-- The physical mirror `c ↦ -c` on the raw spectral table. -/
+/-- The map `c ↦ -c` on the spectral labels. -/
 noncomputable def rawSpectralNegation (S : QuantumStrategy) :
     S.rawSpectralTable.Negation where
   neg := SpectralLabel.neg S
@@ -1854,8 +1831,8 @@ theorem expectation_p_q_eq_joint_moment (S : QuantumStrategy) :
   unfold rawSpectralWeight
   ring
 
-/-- The `d`-weighted part of the raw spectral table is exactly the first
-three terms of the reflection-coordinate Bell expression. -/
+/-- The `d`-weighted part of the spectral matrix is exactly the first
+three terms of the Bell expression in Equation (12). -/
 theorem rawSpectral_linear_exact (S : QuantumStrategy) :
     (∑ c : S.SpectralLabel, ∑ c' : S.SpectralLabel,
         d c.1 c'.1 * S.rawSpectralWeight c c') =
@@ -1903,7 +1880,7 @@ theorem rawSpectral_linear_exact (S : QuantumStrategy) :
   have hW : W = 1 := by exact S.rawSpectralWeight_total
   rw [hW]
 
-/-- The exact reflection-coordinate identity, equation (13) of the paper. -/
+/-- The exact identity in dichotomic observables, Equation (12) of the paper. -/
 theorem four_mul_one_add_value (S : QuantumStrategy) :
     4 * (1 + S.value) =
       S.expectation S.p 1 - S.expectation 1 S.q +
@@ -1916,8 +1893,8 @@ theorem four_mul_one_add_value (S : QuantumStrategy) :
     expectation_sub_left, expectation_sub_right, expectation_one_one]
   ring
 
-/-- The Bell value is the raw spectral table's linear term plus one quarter
-of the two third-setting reflection terms. -/
+/-- The Bell value is the spectral matrix's linear term plus one quarter
+of the two third-setting dichotomic observable terms. -/
 theorem value_eq_raw_linear_add_thirds (S : QuantumStrategy) :
     S.value =
       (∑ c : S.SpectralLabel, ∑ c' : S.SpectralLabel,
@@ -1928,8 +1905,7 @@ theorem value_eq_raw_linear_add_thirds (S : QuantumStrategy) :
   have hbell := S.four_mul_one_add_value
   linarith
 
-/-- Distributing the finite sum identifies the raw mirror correction with
-the average of its row and column block sums. -/
+/-- The square-root contribution is the average of the row and column contributions. -/
 theorem raw_mirror_terms_eq (S : QuantumStrategy) :
     (∑ c : S.SpectralLabel, s c.1 *
       (Real.sqrt
@@ -1966,8 +1942,7 @@ theorem raw_mirror_terms_eq (S : QuantumStrategy) :
     _ = _ := by
       rw [Finset.sum_add_distrib]
 
-/-- Every finite-dimensional complex quantum strategy is bounded by the
-raw mirror-sector score of its spectral coupling table. -/
+/-- The spectral-weight bound before symmetrization. -/
 theorem value_le_raw_mirrorScore (S : QuantumStrategy) :
     S.value ≤ S.rawSpectralTable.mirrorScore S.rawSpectralNegation := by
   rw [S.value_eq_raw_linear_add_thirds]
@@ -2008,10 +1983,10 @@ theorem value_le_raw_mirrorScore (S : QuantumStrategy) :
       ring
     _ = _ := by rw [← S.raw_mirror_terms_eq]
 
-/-- Operator-to-table reduction: every finite-dimensional
-complex strategy admits a coupling table whose score dominates its Bell
+/-- Operator-to-matrix reduction: every finite-dimensional
+complex strategy admits a spectral-weight matrix whose value dominates its Bell
 value.  The witness is the flipped-transpose symmetrization of the
-joint spectral table. -/
+joint spectral matrix. -/
 theorem tableBound (S : QuantumStrategy) :
     ∃ θ : CouplingTable, S.value ≤ θ.score := by
   refine ⟨S.rawSpectralTable.symmetrize S.rawSpectralNegation, ?_⟩

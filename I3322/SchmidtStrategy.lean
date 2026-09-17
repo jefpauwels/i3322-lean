@@ -2,16 +2,11 @@ import I3322.QuantumStrategy
 import Mathlib.Algebra.Order.Archimedean.Real.Basic
 
 /-!
-# Canonical Schmidt-form strategies
+# Strategies in a Schmidt basis
 
-For the finite-dimensional Bell problem we use the standard canonical
-presentation in a Schmidt basis: both local spaces have the same finite
-dimension, the state coefficient matrix is diagonal, and its diagonal entries
-are nonnegative real amplitudes.  Local changes of basis are absorbed into the
-measurement projectors.
-
-`QuantumStrategy` remains the general coefficient-matrix model, while the
-normal-form presentation is represented by a separate type.
+The state coefficient matrix is diagonal with nonnegative real coefficients
+and equal finite local dimensions, as in Section II B. The general complex
+coefficient-matrix model is `QuantumStrategy`.
 -/
 
 namespace I3322
@@ -85,7 +80,7 @@ noncomputable def trivial : SchmidtStrategy where
 
 instance : Nonempty SchmidtStrategy := ⟨trivial⟩
 
-/-- The finite-dimensional quantum supremum in canonical Schmidt form. -/
+/-- The finite-dimensional quantum supremum in specified Schmidt form. -/
 noncomputable def quantumSupremum : ℝ :=
   sSup (Set.range value)
 

@@ -4,19 +4,18 @@ import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.Topology.Algebra.InfiniteSum.NatInt
 
 /-!
-# From a finite equality spine to a two-sided equality chain
+# Extending a finite sequence of positive entries
 
-This file isolates the purely discrete construction used at the end of the
-equality case.  A finite list of interior labels and positive edge ratios is
-clamped at both ends.  A ratio greater than one on the left and a ratio less
-than one on the right determine square-summable geometric amplitude tails.
+Lemmas 4--5: extend the endpoint labels and ratios constantly. The resulting
+auxiliary coefficients have geometric tails and satisfy Equation (31).
+Bounds on finite truncations then give the condition in Equation (42).
 -/
 
 namespace I3322
 
 namespace FiniteSpine
 
-/-- Clamp a natural index to `0, ..., n`. -/
+/-- Replace `k` by `min k n`. -/
 def clampIndex (n k : ℕ) : Fin (n + 1) :=
   ⟨min k n, Nat.lt_succ_iff.mpr (min_le_right _ _)⟩
 
@@ -48,11 +47,11 @@ theorem clampIndex_eq_mk_of_le {n k : ℕ} (h : k ≤ n) :
   ext
   simp [clampIndex, min_eq_left (Nat.succ_le_iff.mpr j.2)]
 
-/-- The predecessor label at a clamped finite vertex. -/
+/-- The previous label, with constant extension at the first endpoint. -/
 def prevLabel (n : ℕ) (c : Fin (n + 1) → ℝ) (j : Fin (n + 1)) : ℝ :=
   c (clampIndex n (j.1 - 1))
 
-/-- The successor label at a clamped finite vertex. -/
+/-- The next label, with constant extension at the last endpoint. -/
 def nextLabel (n : ℕ) (c : Fin (n + 1) → ℝ) (j : Fin (n + 1)) : ℝ :=
   c (clampIndex n (j.1 + 1))
 
@@ -60,8 +59,7 @@ end FiniteSpine
 
 namespace FiniteSpineWindow
 
-/-- The two half-junction contributions from consecutive cells telescope to
-the full interior junction sum and two half boundary junctions. -/
+/-- Summing consecutive half terms gives the full interior sum and the two boundary half terms. -/
 theorem sum_adjacent_halves (f : ℕ → ℝ) (n : ℕ) :
     (∑ j ∈ Finset.range (n + 1), (f j / 2 + f (j + 1) / 2)) =
       f 0 / 2 + (∑ j ∈ Finset.range n, f (j + 1)) + f (n + 1) / 2 := by
@@ -108,7 +106,7 @@ theorem sum_sub_sum_eq_two {ι : Type} [Fintype ι] [DecidableEq ι]
   rw [hrest]
   ring
 
-/-- A finite open PV chain whose labels are real numbers directly. -/
+/-- A finite chain with labels in `[-1,1]`, before endpoint padding. -/
 structure OpenChain (N : ℕ) where
   label : Fin (N + 1) → ℝ
   label_mem : ∀ j, label j ∈ Set.Icc (-1 : ℝ) 1
@@ -126,7 +124,7 @@ noncomputable def OpenChain.numerator {N : ℕ} (q : OpenChain N) : ℝ :=
       s (q.label ⟨j.1 + 1, by omega⟩) *
         q.amplitude ⟨j.1, by omega⟩ * q.amplitude ⟨j.1 + 1, by omega⟩
 
-/-- Replace one interior label of an open chain. -/
+/-- Replace one interior label of a finite chain before endpoint padding. -/
 noncomputable def OpenChain.replaceLabel {N : ℕ} (q : OpenChain N)
     (t : Fin (N + 1)) (x : ℝ) (hx : x ∈ Set.Icc (-1 : ℝ) 1) :
     OpenChain N where
@@ -150,8 +148,7 @@ theorem OpenChain.replaceLabel_label_of_ne {N : ℕ} (q : OpenChain N)
     (q.replaceLabel t x hx).label j = q.label j := by
   simp [OpenChain.replaceLabel, hjt]
 
-/-- The three open-chain numerator terms affected by replacing an interior
-label. -/
+/-- The three numerator terms affected by replacing an interior label. -/
 noncomputable def OpenChain.localObjective {N : ℕ} (q : OpenChain N)
     (t : Fin (N + 1)) (ht0 : 0 < t.1) (htN : t.1 < N) (x : ℝ) : ℝ :=
   d (q.label ⟨t.1 - 1, by omega⟩) x *
@@ -161,8 +158,8 @@ noncomputable def OpenChain.localObjective {N : ℕ} (q : OpenChain N)
     s x * q.amplitude ⟨t.1 - 1, by omega⟩ *
       q.amplitude ⟨t.1, by omega⟩
 
-/-- Replacing one interior label changes exactly its two diagonal cells and
-their shared junction. -/
+/-- Replacing one interior label changes exactly its two diagonal entries and
+their shared neighboring-coefficient term. -/
 theorem OpenChain.replaceLabel_numerator_sub {N : ℕ} (q : OpenChain N)
     (t : Fin (N + 1)) (ht0 : 0 < t.1) (htN : t.1 < N)
     (x : ℝ) (hx : x ∈ Set.Icc (-1 : ℝ) 1) :
@@ -351,8 +348,7 @@ theorem OpenChain.sum_paddedAmplitudes_sq {N : ℕ} (q : OpenChain N) :
   change q.paddedLabels j.castSucc.succ = q.label j
   simp [paddedLabels]
 
-/-- Pad an open real-labelled chain by the required endpoint labels and zero
-amplitudes. -/
+/-- Add the endpoint labels and zero coefficients required in Equation (7). -/
 noncomputable def OpenChain.toPV {N : ℕ} (q : OpenChain N) : PVChain where
   n := N + 2
   n_pos := by omega
@@ -480,8 +476,7 @@ theorem OpenChain.toPV_numerator {N : ℕ} (q : OpenChain N) :
       rw [hdiag, hjunc]
       rfl
 
-/-- Every real-labelled open chain is bounded by `betaPV` after endpoint-zero
-padding. -/
+/-- Endpoint padding gives a finite PV value bounded by `betaPV`. -/
 theorem OpenChain.numerator_le_beta_mul_norm {N : ℕ} (q : OpenChain N) :
     q.numerator ≤ betaPV * q.normSq := by
   have h := pvValue_le_betaPV q.toPV
@@ -490,9 +485,7 @@ theorem OpenChain.numerator_le_beta_mul_norm {N : ℕ} (q : OpenChain N) :
 
 end FiniteSpineWindow
 
-/-- Raw finite-spine data.  This contains no value or stationarity conclusion,
-so equality extraction can construct its clamped sequences and amplitudes
-before proving the equality equations. -/
+/-- The finite labels and positive ratios used to define the auxiliary coefficients. -/
 structure FiniteSpineCore where
   n : ℕ
   n_pos : 0 < n
@@ -503,8 +496,9 @@ structure FiniteSpineCore where
   left_ratio_gt_one : 1 < ratio 0
   right_ratio_lt_one : ratio (Fin.last n) < 1
 
-/-- A finite spine satisfying the exact value recurrence.  No stationarity
-equation is included: those equations are derived from finite PV bounds below. -/
+/-- A finite sequence of spectral labels and auxiliary coefficients satisfying the
+recurrence of Equation (32).  The condition obtained by varying one label is
+derived below. -/
 structure ValueSpine extends FiniteSpineCore where
   label_mem_Ioo : ∀ j, label j ∈ Set.Ioo (-1 : ℝ) 1
   left_value :
@@ -519,8 +513,7 @@ structure ValueSpine extends FiniteSpineCore where
       s (label (Fin.last n)) / (2 * ratio (Fin.last n)) +
       s (label (Fin.last n)) / 2 * ratio (Fin.last n)
 
-/-- Finite equality data after stationarity has been derived at the clamped
-finite vertices and the two constant tails. -/
+/-- The finite sequence and its constant tails satisfy Equations (41)--(42). -/
 structure FiniteSpine extends ValueSpine where
   stationarity : ∀ j : Fin (n + 1),
     0 = FiniteSpine.prevLabel n label j - 1 / 2 +
@@ -536,27 +529,25 @@ structure FiniteSpine extends ValueSpine where
 
 namespace FiniteSpineCore
 
-/-- The finite ratio sequence, clamped on the right. -/
+/-- The finite ratio sequence, extended on the right. -/
 def natRatio (F : FiniteSpineCore) (k : ℕ) : ℝ :=
   F.ratio (FiniteSpine.clampIndex F.n k)
 
-/-- Product of the first `k` clamped ratios. -/
+/-- Product of the first `k` extended ratios. -/
 def prefixAmplitude (F : FiniteSpineCore) (k : ℕ) : ℝ :=
   ∏ j ∈ Finset.range k, F.natRatio j
 
-/-- The bi-infinite label sequence obtained by clamping the finite spine. -/
+/-- The finite labels extended constantly at both ends. -/
 def clampedLabel (F : FiniteSpineCore) : ℤ → ℝ
   | .ofNat k => F.label (FiniteSpine.clampIndex F.n k)
   | .negSucc _ => F.label 0
 
-/-- The bi-infinite ratio sequence obtained by clamping the finite spine. -/
+/-- The finite ratios extended constantly at both ends. -/
 def clampedRatio (F : FiniteSpineCore) : ℤ → ℝ
   | .ofNat k => F.natRatio k
   | .negSucc _ => F.ratio 0
 
-/-- Positive amplitudes determined by the clamped ratios.  The left branch is
-written with ordinary natural powers of the inverse, avoiding integer-power
-normalization in the subsequent summability proof. -/
+/-- The auxiliary coefficients determined by the ratios. -/
 noncomputable def clampedAmplitude (F : FiniteSpineCore) : ℤ → ℝ
   | .ofNat k => F.prefixAmplitude k
   | .negSucc k => (F.ratio 0)⁻¹ ^ (k + 1)
@@ -580,8 +571,8 @@ theorem natRatio_eq_last_of_le (F : FiniteSpineCore) {k : ℕ}
     F.natRatio k = F.ratio (Fin.last F.n) := by
   rw [natRatio, FiniteSpine.clampIndex_eq_last_of_le h]
 
-/-- Beyond the last finite vertex, the prefix product is an exact geometric
-tail with ratio `F.ratio (Fin.last F.n)`. -/
+/-- Beyond the last position of the finite sequence, the auxiliary coefficients form
+a geometric tail with ratio `F.ratio (Fin.last F.n)`. -/
 theorem prefixAmplitude_add_length (F : FiniteSpineCore) (k : ℕ) :
     F.prefixAmplitude (F.n + k) =
       F.prefixAmplitude F.n * F.ratio (Fin.last F.n) ^ k := by
@@ -607,7 +598,7 @@ theorem clampedAmplitude_pos (F : FiniteSpineCore) (i : ℤ) :
   | negSucc k =>
       exact pow_pos (inv_pos.mpr (F.ratio_pos 0)) _
 
-/-- The explicit amplitudes have exactly the prescribed adjacent ratios. -/
+/-- The explicit coefficients have exactly the prescribed adjacent ratios. -/
 theorem clampedRatio_eq_amplitude_div (F : FiniteSpineCore) (i : ℤ) :
     F.clampedRatio i = F.clampedAmplitude (i + 1) / F.clampedAmplitude i := by
   have hr0 : F.ratio 0 ≠ 0 := ne_of_gt (F.ratio_pos 0)
@@ -635,7 +626,7 @@ theorem clampedRatio_eq_amplitude_div (F : FiniteSpineCore) (i : ℤ) :
             (pow_ne_zero _ (inv_ne_zero hr0))]
           simp
 
-/-- The nonnegative half of the explicit amplitude sequence is summable. -/
+/-- The nonnegative half of the explicit coefficient sequence is summable. -/
 theorem summable_clampedAmplitude_sq_nonnegative (F : FiniteSpineCore) :
     Summable (fun k : ℕ => F.clampedAmplitude (Int.ofNat k) ^ 2) := by
   let q : ℝ := F.ratio (Fin.last F.n) ^ 2
@@ -665,7 +656,7 @@ theorem summable_clampedAmplitude_sq_nonnegative (F : FiniteSpineCore) :
     omega
   exact (summable_nat_add_iff F.n).mp hshift
 
-/-- The negative half of the explicit amplitude sequence is summable. -/
+/-- The negative half of the explicit coefficient sequence is summable. -/
 theorem summable_clampedAmplitude_sq_negative (F : FiniteSpineCore) :
     Summable (fun k : ℕ =>
       F.clampedAmplitude (-(Int.ofNat k + 1)) ^ 2) := by
@@ -716,7 +707,7 @@ theorem clampedLabel_mem_Ioo (V : ValueSpine) (i : ℤ) :
     V.clampedLabel i ∈ Set.Ioo (-1 : ℝ) 1 := by
   cases i <;> exact V.label_mem_Ioo _
 
-/-- The value recurrence holds at every integer vertex using only
+/-- The ratio recurrence, Equation (41), holds at every integer position, using only
 `ValueSpine` data. -/
 theorem clamped_ratio_recurrence (V : ValueSpine) (i : ℤ) :
     betaPV = d (V.clampedLabel (i - 1)) (V.clampedLabel i) +
@@ -752,8 +743,7 @@ theorem clamped_ratio_recurrence (V : ValueSpine) (i : ℤ) :
               FiniteSpine.clampIndex_eq_last_of_le hnk,
               FiniteSpine.clampIndex_eq_last_of_le hnks] using V.right_value
 
-/-- The value recurrence multiplied by the squared amplitude.  Adjacent-ratio
-definitions turn its two half-junction terms into ordinary products. -/
+/-- Multiply Equation (41) by the squared auxiliary coefficient. -/
 theorem weighted_value_recurrence (V : ValueSpine) (i : ℤ) :
     betaPV * V.clampedAmplitude i ^ 2 =
       d (V.clampedLabel (i - 1)) (V.clampedLabel i) *
@@ -807,15 +797,15 @@ end ValueSpine
 
 namespace FiniteSpine
 
-/-- The clamped label sequence of the underlying raw core. -/
+/-- Extend the finite sequence of labels constantly at both ends. -/
 abbrev extendedLabel (F : FiniteSpine) : ℤ → ℝ :=
   F.toFiniteSpineCore.clampedLabel
 
-/-- The clamped ratio sequence of the underlying raw core. -/
+/-- Extend the finite sequence of ratios constantly at both ends. -/
 abbrev extendedRatio (F : FiniteSpine) : ℤ → ℝ :=
   F.toFiniteSpineCore.clampedRatio
 
-/-- The square-summable amplitude sequence of the underlying raw core. -/
+/-- The auxiliary coefficients satisfy Equation (31). -/
 noncomputable abbrev extendedAmplitude (F : FiniteSpine) : ℤ → ℝ :=
   F.toFiniteSpineCore.clampedAmplitude
 
@@ -823,7 +813,7 @@ theorem extendedLabel_mem_Ioo (F : FiniteSpine) (i : ℤ) :
     F.extendedLabel i ∈ Set.Ioo (-1 : ℝ) 1 := by
   cases i <;> exact F.label_mem_Ioo _
 
-/-- The value recurrence holds at every integer vertex of the clamped spine. -/
+/-- Equation (41) holds at every integer position of the extended sequence. -/
 theorem extended_ratio_recurrence (F : FiniteSpine) (i : ℤ) :
     betaPV = d (F.extendedLabel (i - 1)) (F.extendedLabel i) +
       s (F.extendedLabel (i - 1)) / (2 * F.extendedRatio (i - 1)) +
@@ -859,8 +849,8 @@ theorem extended_ratio_recurrence (F : FiniteSpine) (i : ℤ) :
               clampIndex_eq_last_of_le hnk,
               clampIndex_eq_last_of_le hnks] using F.right_value
 
-/-- The finite and constant-tail stationarity hypotheses cover every integer
-vertex of the clamped spine. -/
+/-- Equation (42) on the finite sequence and on the two constant tails covers every
+integer position. -/
 theorem extended_label_recurrence (F : FiniteSpine) (i : ℤ) :
     0 = F.extendedLabel (i - 1) - 1 / 2 +
       (F.extendedLabel (i + 1) + 1 / 2) * F.extendedRatio i ^ 2 -
@@ -918,8 +908,8 @@ theorem extended_label_recurrence (F : FiniteSpine) (i : ℤ) :
               clampIndex_eq_last_of_le hncur,
               clampIndex_eq_last_of_le hnnext] using F.right_stationarity
 
-/-- Package the clamped finite spine as the exact `EqualityChain` consumed by
-the already formalized propagation contradiction. -/
+/-- Extend the finite sequence to a two-sided sequence satisfying the conditions of
+Lemma 5. -/
 noncomputable def toEqualityChain (F : FiniteSpine) : EqualityChain where
   label := F.extendedLabel
   amplitude := F.extendedAmplitude
@@ -952,8 +942,8 @@ noncomputable def toEqualityChain (F : FiniteSpine) : EqualityChain where
         omega
     | negSucc k => rfl
 
-/-- Terminal finite-spine interface: the supplied finite equations construct a
-two-sided equality chain. -/
+/-- The finite equations construct a sequence satisfying the conditions of
+Lemma 5. -/
 theorem nonempty_equalityChain (F : FiniteSpine) : Nonempty EqualityChain :=
   ⟨F.toEqualityChain⟩
 
@@ -963,24 +953,23 @@ namespace ValueSpine
 
 open scoped BigOperators
 
-/-! ### Centered finite windows
+/-! ### Finite truncations
 
-The following definitions cut a finite open PV chain out of the explicit
-square-summable amplitude sequence.  The extra amplitude on either side of
-the distinguished label keeps all three terms of its one-label objective
-strictly inside the window. -/
+Truncate the auxiliary sequence to a finite window around position `i` that
+contains the three terms affected by changing the label `c_i`; these are the
+finite truncations of Lemma 5, Step 1. -/
 
-/-- A centered window has `2 * N + 3` amplitudes. -/
+/-- A truncation centered at position `i` has `2 * N + 3` coefficients. -/
 def windowEdgeCount (N : ℕ) : ℕ := 2 * N + 3
 
-/-- The integer index of the first amplitude in the centered window. -/
+/-- The integer index of the first coefficient of the centered truncation. -/
 def windowLeftIndex (i : ℤ) (N : ℕ) : ℤ := i - (N : ℤ) - 1
 
-/-- The finite label position occupied by the distinguished label `c i`. -/
+/-- The position of the label `c i` inside the centered truncation. -/
 def windowTarget (N : ℕ) : Fin (windowEdgeCount N + 1) :=
   ⟨N + 2, by simp [windowEdgeCount]; omega⟩
 
-/-- The centered open chain cut out of a value spine. -/
+/-- A finite truncation of the auxiliary sequence. -/
 noncomputable def centeredWindow (V : ValueSpine) (i : ℤ) (N : ℕ) :
     FiniteSpineWindow.OpenChain (windowEdgeCount N) where
   label j := V.clampedLabel (windowLeftIndex i N + (j.1 : ℤ) - 1)
@@ -1009,11 +998,12 @@ theorem windowTarget_lt (N : ℕ) :
   simp [windowTarget, windowEdgeCount]
   omega
 
-/-- A junction term, indexed by its shared integer label. -/
+/-- The product `s(c_i) u_i u_(i+1)` for two neighboring coefficients. -/
 noncomputable def junction (V : ValueSpine) (k : ℤ) : ℝ :=
   s (V.clampedLabel k) * V.clampedAmplitude k * V.clampedAmplitude (k + 1)
 
-/-- The exact two-boundary defect of a centered window. -/
+/-- `betaPV` times the squared norm of a centered truncation minus its numerator;
+by Equation (32) only two boundary terms remain. -/
 noncomputable def windowDefect (V : ValueSpine) (i : ℤ) (N : ℕ) : ℝ :=
   (V.junction (i - (N : ℤ) - 2) +
     V.junction (i + (N : ℤ) + 1)) / 2
@@ -1026,7 +1016,7 @@ noncomputable def windowDefect (V : ValueSpine) (i : ℤ) (N : ℕ) : ℝ :=
   congr 1
   ring
 
-/-- The finite and integer-indexed local objectives agree exactly. -/
+/-- The three affected terms agree with those in the finite truncation. -/
 theorem centeredWindow_localObjective
     (V : ValueSpine) (i : ℤ) (N : ℕ) (x : ℝ) :
     (V.centeredWindow i N).localObjective (windowTarget N)
@@ -1064,8 +1054,8 @@ theorem centeredWindow_numerator (V : ValueSpine) (i : ℤ) (N : ℕ) :
     push_cast
     congr 1 <;> ring
 
-/-- Summing the exact value recurrence over a centered window leaves only
-the two half-junctions at its boundary. -/
+/-- Summing Equation (32) over a centered truncation leaves only the two
+neighboring-coefficient terms at its boundary, each with a factor `1/2`. -/
 theorem centeredWindow_defect_eq (V : ValueSpine) (i : ℤ) (N : ℕ) :
     betaPV * (V.centeredWindow i N).normSq -
         (V.centeredWindow i N).numerator = V.windowDefect i N := by
@@ -1168,8 +1158,7 @@ theorem s_clampedLabel_le_one (V : ValueSpine) (k : ℤ) :
   rw [Real.sqrt_le_one]
   nlinarith [sq_nonneg (V.clampedLabel k)]
 
-/-- A junction is bounded by the arithmetic mean of the adjacent squared
-amplitudes. -/
+/-- Bound the product of neighboring coefficients by half the sum of their squares. -/
 theorem junction_le_sq_mean (V : ValueSpine) (k : ℤ) :
     V.junction k ≤
       (V.clampedAmplitude k ^ 2 + V.clampedAmplitude (k + 1) ^ 2) / 2 := by
@@ -1188,7 +1177,7 @@ theorem junction_le_sq_mean (V : ValueSpine) (k : ℤ) :
   nlinarith [sq_nonneg
     (V.clampedAmplitude k - V.clampedAmplitude (k + 1))]
 
-/-- Junctions tend to zero along every injectively indexed subsequence. -/
+/-- The products of neighboring coefficients tend to zero along distinct indices. -/
 theorem junction_tendsto_zero_comp (V : ValueSpine) (k : ℕ → ℤ)
     (hk : Function.Injective k) :
     Filter.Tendsto (fun N => V.junction (k N)) Filter.atTop (nhds 0) := by
@@ -1213,7 +1202,7 @@ theorem junction_tendsto_zero_comp (V : ValueSpine) (k : ℕ → ℤ)
     (fun N => V.junction_nonneg (k N))
     (fun N => V.junction_le_sq_mean (k N)) hu
 
-/-- Both boundary junctions of the centered window vanish. -/
+/-- Both boundary neighboring-coefficient terms of the centered truncation tend to zero. -/
 theorem windowDefect_tendsto_zero (V : ValueSpine) (i : ℤ) :
     Filter.Tendsto (V.windowDefect i) Filter.atTop (nhds 0) := by
   have hleft : Function.Injective
@@ -1233,7 +1222,7 @@ theorem windowDefect_tendsto_zero (V : ValueSpine) (i : ℤ) :
   unfold windowDefect
   convert (hl.add hr).div_const 2 using 1 <;> norm_num
 
-/-- The exact centered-window deficit tends to zero. -/
+/-- The boundary terms of the centered truncations tend to zero as the truncations grow. -/
 theorem centeredWindow_defect_tendsto_zero (V : ValueSpine) (i : ℤ) :
     Filter.Tendsto
       (fun N => betaPV * (V.centeredWindow i N).normSq -
@@ -1242,9 +1231,9 @@ theorem centeredWindow_defect_tendsto_zero (V : ValueSpine) (i : ℤ) :
   simpa only [V.centeredWindow_defect_eq] using
     V.windowDefect_tendsto_zero i
 
-/-- Replacing the distinguished label in any centered window is bounded by
-the finite PV supremum.  The displayed correction is exactly the change of
-the three local terms. -/
+/-- After replacing the label `c_i` in any centered truncation, the value is at most
+`betaPV`, Lemma 5, Step 1.  The displayed correction is exactly the change of the
+three terms containing `c_i`. -/
 theorem centeredWindow_replacement_bound
     (V : ValueSpine) (i : ℤ) (x : ℝ) (hx : x ∈ Set.Icc (-1 : ℝ) 1)
     (N : ℕ) :
@@ -1270,9 +1259,7 @@ theorem centeredWindow_replacement_bound
   rw [hlocalx, htarget, hlocal0] at hchange
   linarith
 
-/-- Every clamped label satisfies the exact stationarity equation obtained by
-differentiating only a finite, one-label objective after its boundary defect
-has been sent to zero. -/
+/-- Equation (42), obtained by varying one label and taking the limit of finite truncations. -/
 theorem clamped_label_stationarity (V : ValueSpine) (i : ℤ) :
     0 = V.clampedLabel (i - 1) - 1 / 2 +
       (V.clampedLabel (i + 1) + 1 / 2) * V.clampedRatio i ^ 2 -
@@ -1288,8 +1275,7 @@ theorem clamped_label_stationarity (V : ValueSpine) (i : ℤ) :
   rw [← V.toFiniteSpineCore.clampedRatio_eq_amplitude_div i] at h
   exact h
 
-/-- Package stationarity at every clamped integer index into the finite
-stationarity fields used by `FiniteSpine`. -/
+/-- The finite sequence satisfies Equation (42). -/
 noncomputable def toFiniteSpineOfStationarity (V : ValueSpine)
     (hstat : ∀ i : ℤ,
       0 = V.clampedLabel (i - 1) - 1 / 2 +
@@ -1335,13 +1321,12 @@ noncomputable def toFiniteSpineOfStationarity (V : ValueSpine)
       FiniteSpine.clampIndex_eq_last_of_le (Nat.le_succ V.n),
       FiniteSpine.clampIndex_eq_last_of_le (Nat.le_add_right V.n 2)] using h
 
-/-- The canonical finite spine obtained from the value recurrences and finite
-PV bounds. -/
+/-- The finite sequence satisfies Equations (41)--(42). -/
 noncomputable def toFiniteSpine (V : ValueSpine) : FiniteSpine :=
   V.toFiniteSpineOfStationarity V.clamped_label_stationarity
 
-/-- Terminal generic bridge: exact value recurrences on a finite support
-spine force a forbidden square-summable two-sided equality chain. -/
+/-- The finite sequence and the bounds on finite truncations yield the sequence
+excluded by Lemma 5. -/
 theorem nonempty_equalityChain (V : ValueSpine) : Nonempty EqualityChain :=
   V.toFiniteSpine.nonempty_equalityChain
 

@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use this formalization, please cite this repository."
-title: "Lean formalization of the I3322 variational identity and nonattainment for finite-dimensional pure-projective strategies"
+title: "Lean formalization of the I3322 variational identity and finite-dimensional nonattainment"
 type: software
 license: MIT
 authors:
@@ -12,8 +12,8 @@ abstract: >-
   A Lean 4 formalization proving that the supremum of the explicitly defined
   I3322 Bell functional over finite-dimensional complex bipartite pure-state
   strategies with three binary projective measurements per party equals the
-  supremum over finite Pál–Vértesi chains, and that no strategy in this
-  pure-projective class attains that supremum. The standard reduction from
+  supremum over finite Pál–Vértesi chains, and that no such strategy
+  attains that supremum. The standard reduction from
   mixed states and binary POVMs to this class is not formalized.
 keywords:
   - Lean 4
